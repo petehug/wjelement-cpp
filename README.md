@@ -18,10 +18,8 @@ and building schema and document stores. At the time of forking WJElement,
 its built in support for schema only supported validation and was based on 
 JSON Schema draft-03.
 
-To use this library, you will need to build and link with wjelement
-with the wjelement++ branch. the branched version of the wjelement
-
-The library uses boost regex.
+To use this library, you will need to build and link with the wjelement++
+branch of wjelement. Also note the library uses boost regex.
 
 Peter Hug <pete@kapiti.co.nz>  - author of WJElement++
 
