@@ -1,4 +1,4 @@
-wjelement-cpp
+Wjelement-cpp
 =============
 
 WJElement-cpp - Lightweight C++ wrapper for WJElement with JSON Schema support
@@ -19,8 +19,12 @@ its built in support for schema only supported validation and was based on
 JSON Schema draft-03.
 
 To use this library, you will need to build and link with the wjelement++
-branch of wjelement. Also note the library uses boost regex.
+branch of wjelement:
 
-Peter Hug <pete@kapiti.co.nz>  - author of WJElement++
+ git clone -b wjelement++ https://github.com/petehug/wjelement.git
+ 
+Note: the library uses boost regex.
 
-Special thanks to Micah N Gorrell for his excellent wjelement library!
+Peter Hug <pete@kapiti.co.nz>  - author of Wjelement-cpp
+
+Special thanks goes to Micah N Gorrell for his excellent wjelement library!
