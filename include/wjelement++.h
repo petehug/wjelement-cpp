@@ -357,13 +357,10 @@ namespace WJPP
 		bool										isInteger()										{ return _e && _e->type == WJR_TYPE_INTEGER; }
 		bool										isString()										{ return _e && _e->type == WJR_TYPE_STRING; }
 
-		bool										getBool();
-		int											getInt();
-		double									getNum();
-		string									getString();
-
 		unsigned int						getDepth();
 		Node										getRoot();
+		Node										getParent()										{ return _e && _e->parent ? Node(_e->parent) : Node(NULL); }
+
 
 		// removes this from it's parent so that it becomes a root
 		void										detach();
@@ -384,8 +381,6 @@ namespace WJPP
 														operator int()								{ return getInt(); }
 														operator string()							{ return getString(); }
 */
-		Node										getParent()										{ return _e && _e->parent ? Node(_e->parent) : Node(NULL); }
-		Node										getSchema();
 
 		ostream &								dump(ostream & os, int indent = 0);
 
@@ -394,28 +389,42 @@ namespace WJPP
 
 		bool										validateInstance(Node& node, const string& strURI = "");
 
+		// create roots
+		static Node							createObject();
+		static Node							createArray();
+
 		// add nodes to this (this must be a valid container)
 		Node										addObject(const string& name);
 		Node										addArray(const string& name);
 		Node										addNull(const string& name);
 		Node										addString(const string& name, const string& value);
 		Node										addBool(const string& name, bool value);
-		Node										addInt(const string& name, int value);
-//		Node										addInt32(const string& name, int32 value);
-//		Node										addUInt32(const string& name, uint32 value);
-//		Node										addInt64(const string& name, int64 value);
-//		Node										addUInt64(const string& name, uint64 value);
+		Node										addInt(const string& name, int value)						{ return addInt32(name, (int32) value); }
+		Node										addInt32(const string& name, int32 value);					
+		Node										addUInt32(const string& name, uint32 value);
+		Node										addInt64(const string& name, int64 value);
+		Node										addUInt64(const string& name, uint64 value);
 		Node										addDouble(const string& name, double value);
 
+		// get values
+		string									getString();
+		bool										getBool();
+		int											getInt()																				{ return (int) getInt32(); }
+		int32										getInt32();
+		uint32									getUInt32();
+		int64										getInt64();
+		uint64									getUInt64();
+		double									getNum();
+
 		// set values
-		Node										setNull();
+		void										setNull();
 		void										setString(const string& value);
 		void										setBool(bool value);
-		void										setInt(int value);
-//		Node										setInt32(int32 value);
-//		Node										setUInt32(uint32 value);
-//		Node										setInt64(int64 value);
-//		Node										setUInt64(uint64 value);
+		void										setInt(int value)																{ return setInt32((int32) value); }
+		void										setInt32(int32 value);
+		void										setUInt32(uint32 value);
+		void										setInt64(int64 value);
+		void										setUInt64(uint64 value);
 		void										setDouble(double value);
 
 	};

@@ -30,6 +30,17 @@ namespace WJPP
 	}
 
 
+	// naughty me... but here we often work with const string& and wjelement often expects non-const char* as input
+	// which it simply strdup's and stores in its own lib, so this union is a way to get around c++ compiler safeguards
+
+	union Cheat
+	{
+		const char *	cp;
+		char * c;
+	};
+
+
+
 	//===================================================================================
 
 	static string G_strMetaSchema(
@@ -900,48 +911,6 @@ namespace WJPP
 		return Node(c);
 	}
 
-
-
-	bool Node::getBool()											
-	{ 
-		if (!isBoolean())
-			throw std::runtime_error("node doesn't understand getBool()");
-		
-		return WJEBool(_e, ".", WJE_GET, NULL) == 1 ? true : false; 
-	}
-
-
-
-	int Node::getInt()
-	{ 
-		if (!isInteger())
-			throw std::runtime_error("node doesn't understand getInt()");
-		
-		return WJEInt32(_e, ".", WJE_GET, NULL); 
-	}
-
-
-
-	double Node::getNum()
-	{ 
-		if (!isNumber() && !isInteger())
-			throw std::runtime_error("node doesn't understand getNum()");
-
-		if (isInteger())
-			return (double) WJEInt64(_e, ".", WJE_GET, NULL);
-
-		return WJEDouble(_e, ".", WJE_GET, NULL); 
-	}
-
-
-
-	string Node::getString() 
-	{ 
-		if (!isString())
-			throw std::runtime_error("node doesn't understand getString()");
-		
-		return WJEString(_e, ".", WJE_GET, NULL); 
-	}
 
 
 	unsigned int Node::getDepth()
@@ -2352,14 +2321,6 @@ namespace WJPP
 
 
 
-	union Cheat
-	{
-		const char *	cp;
-		char * c;
-	};
-
-
-
 	WJElement Node::_beforeAdd(const string& name)
 	{
 		Cheat u;
@@ -2389,6 +2350,22 @@ namespace WJPP
 			throw runtime_error("failed to create node");
 
 		return e;
+	}
+
+
+
+	/* static */
+	Node Node::createObject()
+	{
+		return WJEObject(NULL, NULL, WJE_NEW);
+	}
+
+
+
+	/* static */
+	Node Node::createArray()
+	{
+		return WJEArray(NULL, NULL, WJE_NEW);
 	}
 
 
@@ -2437,10 +2414,37 @@ namespace WJPP
 
 
 
-	Node Node::addInt(const string& name, int value)
+	Node Node::addInt32(const string& name, int32 value)
 	{
 		WJElement e = _beforeAdd(name);
 		WJEInt32(e, NULL, WJE_MOD, value);
+		return e;
+	}
+
+
+
+	Node Node::addUInt32(const string& name, uint32 value)
+	{
+		WJElement e = _beforeAdd(name);
+		WJEUInt32(e, NULL, WJE_MOD, value);
+		return e;
+	}
+
+
+
+	Node Node::addInt64(const string& name, int64 value)
+	{
+		WJElement e = _beforeAdd(name);
+		WJEInt64(e, NULL, WJE_MOD, value);
+		return e;
+	}
+
+
+
+	Node Node::addUInt64(const string& name, uint64 value)
+	{
+		WJElement e = _beforeAdd(name);
+		WJEUInt64(e, NULL, WJE_MOD, value);
 		return e;
 	}
 
@@ -2451,6 +2455,87 @@ namespace WJPP
 		WJElement e = _beforeAdd(name);
 		WJEDouble(e, NULL, WJE_MOD, value);
 		return e;
+	}
+
+
+
+	bool Node::getBool()											
+	{ 
+		if (!isBoolean())
+			throw std::runtime_error("node doesn't understand getBool()");
+		
+		return WJEBool(_e, ".", WJE_GET, NULL) == 1 ? true : false; 
+	}
+
+
+
+	int32 Node::getInt32()
+	{ 
+		if (!isInteger())
+			throw std::runtime_error("node doesn't understand getInt32()");
+		
+		return WJEInt32(_e, ".", WJE_GET, NULL); 
+	}
+
+
+
+	uint32 Node::getUInt32()
+	{ 
+		if (!isInteger())
+			throw std::runtime_error("node doesn't understand getUInt32()");
+		
+		return WJEUInt32(_e, ".", WJE_GET, NULL); 
+	}
+
+
+
+	int64 Node::getInt64()
+	{ 
+		if (!isInteger())
+			throw std::runtime_error("node doesn't understand getInt64()");
+		
+		return WJEInt64(_e, ".", WJE_GET, NULL); 
+	}
+
+
+
+	uint64 Node::getUInt64()
+	{ 
+		if (!isInteger())
+			throw std::runtime_error("node doesn't understand getUInt64()");
+		
+		return WJEUInt64(_e, ".", WJE_GET, NULL); 
+	}
+
+
+
+	double Node::getNum()
+	{ 
+		if (!isNumber() && !isInteger())
+			throw std::runtime_error("node doesn't understand getNum()");
+
+		if (isInteger())
+			return (double) WJEInt64(_e, ".", WJE_GET, NULL);
+
+		return WJEDouble(_e, ".", WJE_GET, NULL); 
+	}
+
+
+
+	string Node::getString() 
+	{ 
+		if (!isString())
+			throw std::runtime_error("node doesn't understand getString()");
+		
+		return WJEString(_e, ".", WJE_GET, NULL); 
+	}
+
+
+
+	void Node::setNull()
+	{
+		if (!_e || !WJENull(_e, NULL, WJE_MOD))
+			throw runtime_error("failed to set null value");
 	}
 
 
@@ -2473,10 +2558,34 @@ namespace WJPP
 
 
 
-	void Node::setInt(int value)
+	void Node::setInt32(int32 value)
 	{
 		if (!_e || WJEInt32(_e, NULL, WJE_MOD, value) != value)
-			throw runtime_error("failed to set int value");
+			throw runtime_error("failed to set int32 value");
+	}
+
+
+
+	void Node::setUInt32(uint32 value)
+	{
+		if (!_e || WJEUInt32(_e, NULL, WJE_MOD, value) != value)
+			throw runtime_error("failed to set uint32 value");
+	}
+
+
+
+	void Node::setInt64(int64 value)
+	{
+		if (!_e || WJEInt64(_e, NULL, WJE_MOD, value) != value)
+			throw runtime_error("failed to set int64 value");
+	}
+
+
+
+	void Node::setUInt64(uint64 value)
+	{
+		if (!_e || WJEUInt64(_e, NULL, WJE_MOD, value) != value)
+			throw runtime_error("failed to set uint64 value");
 	}
 
 
@@ -2658,6 +2767,5 @@ namespace WJPP
 	}
 
 
-		
 } /* namespace WJPP */
 
