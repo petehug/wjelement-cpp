@@ -23,7 +23,13 @@ branch of wjelement:
 
  git clone -b wjelement++ https://github.com/petehug/wjelement.git
  
-Note: the library uses boost regex.
+Notes: 
+
+- currently I'm building this under windows using VC9 but will add support for Linux shortly
+- the library currently uses boost regex but is expected to alos use boost threads in the future
+- you find a test program in the test folder and the VC9 project file under windows
+  this test program will run all draft4 compliance tests but it does require these additional
+	libraries: libcurl, libssh2 and zlib
 
 Peter Hug <pete@kapiti.co.nz>  - author of Wjelement-cpp
 
