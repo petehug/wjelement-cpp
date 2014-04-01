@@ -8,14 +8,12 @@
 #include <map>
 #include <boost/regex.hpp>
 
-using namespace::std;
-
 namespace TWO
 {
 	namespace HTTP
 	{
-		typedef map<string, string>							MapHeader;
-		typedef map<string, string>::iterator		MapHeaderItr;
+		typedef std::map<std::string, std::string>							MapHeader;
+		typedef std::map<std::string, std::string>::iterator		MapHeaderItr;
 
 		class OutboundHttpRequest
 		{
@@ -33,29 +31,29 @@ namespace TWO
 			MapHeader				m_mapRequestHeader;
 			MapHeader				m_mapResponseHeader;
 			Method					m_eMethod;
-			string					m_strURL;
-			istream*				m_pStrmBody;
+			std::string			m_strURL;
+			std::istream*		m_pStrmBody;
 
 		public:
 			OutboundHttpRequest() : m_eMethod(OHR_UNDEFINED) {}
 
-			void			initialise(const string& strURL, Method eMethod, istream* pStrmBody = NULL);
+			void					initialise(const std::string& strURL, Method eMethod, std::istream* pStrmBody = NULL);
 
-			string		sendRequest();
+			std::string		sendRequest();
 
-			void			clearHeaders()																						{ clearRequestHeader(); clearResponseHeader(); }
-			void			clearRequestHeader()																			{ m_mapRequestHeader.clear(); }
-			void			clearResponseHeader()																			{ m_mapResponseHeader.clear(); }
+			void					clearHeaders()																											{ clearRequestHeader(); clearResponseHeader(); }
+			void					clearRequestHeader()																								{ m_mapRequestHeader.clear(); }
+			void					clearResponseHeader()																								{ m_mapResponseHeader.clear(); }
 
-			void			setRequestHeader(const string& key, const string& value)	{ setHeaderValue(m_mapRequestHeader, key, value); }
-			string		getRequestHeader(const string& key)												{ return getHeaderValue(m_mapRequestHeader, key); }
+			void					setRequestHeader(const std::string& key, const std::string& value)	{ setHeaderValue(m_mapRequestHeader, key, value); }
+			std::string		getRequestHeader(const std::string& key)														{ return getHeaderValue(m_mapRequestHeader, key); }
 
-			void			setResponseHeader(const string& key, const string& value)	{ setHeaderValue(m_mapResponseHeader, key, value); }
-			string		getResponseHeader(const string& key)											{ return getHeaderValue(m_mapResponseHeader, key); }
+			void					setResponseHeader(const std::string& key, const std::string& value)	{ setHeaderValue(m_mapResponseHeader, key, value); }
+			std::string		getResponseHeader(const std::string& key)														{ return getHeaderValue(m_mapResponseHeader, key); }
 
 		protected:
-			void			setHeaderValue(MapHeader & mapHeader, const string& key, const string& value);
-			string		getHeaderValue(MapHeader & mapHeader, const string& key);
+			void					setHeaderValue(MapHeader & mapHeader, const std::string& key, const std::string& value);
+			std::string		getHeaderValue(MapHeader & mapHeader, const std::string& key);
 		};
 
 
@@ -71,7 +69,7 @@ namespace TWO
 				setRequestHeader("Accept-Encoding", "gzip,deflate");
 			}
 
-			string		sendRequest(const string& strURL, Method eMethod = OHR_GET, istream* pStrmBody = NULL)
+			std::string		sendRequest(const std::string& strURL, Method eMethod = OHR_GET, std::istream* pStrmBody = NULL)
 			{
 				initialise(strURL, eMethod, pStrmBody);
 				return OutboundHttpRequest::sendRequest();

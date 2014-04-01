@@ -1,11 +1,14 @@
 Wjelement-cpp Roadmap
 =====================
 
-* auto conf/make files for linux
+* add auto conf/make or cmake files for linux
+* doxygenize source
+* create basic usage html page
 * WJPP::Node's JSON schema validators should not throw; instead they should populate a json array with errors
 * WJPP::Cache is currently wrong as it should be client specific, i.e. one internal cache
-  to store schemas and a chache for each client to store json documents
+  to store schemas and client caches to store json documents
 * The Cache will require mutex protection when manipulating the schema cache
 * Support for JSON hyper schema
 * Encapsulate JSON schema version specific code so the library can support multiple versions concurrently coexist
+
 

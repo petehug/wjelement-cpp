@@ -7,8 +7,8 @@ namespace TWO
 		static size_t header_callback(void *ptr, size_t size, size_t nmemb, void *mapHdr)
 		{
 			MapHeader&								mapHeader = *((MapHeader*) mapHdr);
-			string										key, value, tmp;
-			string::size_type					pos;
+			std::string								key, value, tmp;
+			std::string::size_type		pos;
 
 			tmp = (char*) ptr;
 
@@ -18,7 +18,7 @@ namespace TWO
 
 			pos = tmp.find(':');
 
-			if (pos != string::npos)
+			if (pos != std::string::npos)
 			{
 				key = tmp.substr(0, pos);
 				pos++;
@@ -53,15 +53,13 @@ namespace TWO
 
 				strm >> *pout; 
 				i++;
-		//		std::cout << i << ": " << *pout << std::endl;
+
 				pout++;
 			}
 
 			retcode = (pout - (char*) ptr) / size;
 
 			nread = (curl_off_t)retcode;
-
-		//  fprintf(stderr, "*** We read %i bytes from file\n", nread);
 
 			return retcode;
 		}
@@ -89,14 +87,14 @@ namespace TWO
 
 
 
-		void OutboundHttpRequest::setHeaderValue(MapHeader & mapHeader, const string& key, const string& value)
+		void OutboundHttpRequest::setHeaderValue(MapHeader & mapHeader, const std::string& key, const std::string& value)
 		{
 			mapHeader[key] = value;
 		}
 
 
 
-		string OutboundHttpRequest::getHeaderValue(MapHeader & mapHeader, const string& key)
+		std::string OutboundHttpRequest::getHeaderValue(MapHeader & mapHeader, const std::string& key)
 		{
 			MapHeaderItr		itr = mapHeader.find(key);
 
@@ -108,7 +106,7 @@ namespace TWO
 
 
 
-		void OutboundHttpRequest::initialise(const string& strURL, Method eMethod, istream* pStrmBody)
+		void OutboundHttpRequest::initialise(const std::string& strURL, Method eMethod, std::istream* pStrmBody)
 		{
 			// clear the response header
 			clearResponseHeader();
@@ -119,11 +117,11 @@ namespace TWO
 
 
 
-		string OutboundHttpRequest::sendRequest()
+		std::string OutboundHttpRequest::sendRequest()
 		{   
 			CURL*										curl = NULL;
-			ostringstream						strm;
-			ostringstream						strrqst;
+			std::ostringstream			strm;
+			std::ostringstream			strrqst;
 			MapHeaderItr						itr;
 			curl_slist*							headers=NULL; // init to NULL is important 
 
@@ -147,12 +145,12 @@ namespace TWO
 
 				// sanity checks
 				if (m_eMethod == OHR_UNDEFINED || m_strURL.empty())
-					throw runtime_error("OutboundHttpRequest requires valid URL and HTTP/1.1 mode");
+					throw std::runtime_error("OutboundHttpRequest requires valid URL and HTTP/1.1 mode");
 
 				curl = curl_easy_init();
 
 				if (!curl) 
-					throw runtime_error("unable to initialize curl");
+					throw std::runtime_error("unable to initialize curl");
 
 				if (!m_mapRequestHeader.empty())
 				{
@@ -160,7 +158,7 @@ namespace TWO
 								itr != m_mapRequestHeader.end();
 								itr++)
 					{
-						headers = curl_slist_append(headers, (string(itr->first) + ": " + itr->second).c_str());  
+						headers = curl_slist_append(headers, (std::string(itr->first) + ": " + itr->second).c_str());  
 					}
 
 					curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
@@ -196,14 +194,14 @@ namespace TWO
 				curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
 
 				if (curl_easy_perform(curl) != CURLE_OK)
-					throw runtime_error("curl_easy_perform failed.");
+					throw std::runtime_error("curl_easy_perform failed.");
 
 				curl_slist_free_all(headers);
 				curl_easy_cleanup(curl);
 
 				return strm.str();
 			}
-			catch(runtime_error& rte)
+			catch(std::runtime_error& rte)
 			{
 				if (headers)
 					curl_slist_free_all(headers);
@@ -211,7 +209,7 @@ namespace TWO
 				if (curl)
 					curl_easy_cleanup(curl);
 
-				throw runtime_error(strrqst.str() + ". " + rte.what());
+				throw std::runtime_error(strrqst.str() + ". " + rte.what());
 			}
 
 			return "";

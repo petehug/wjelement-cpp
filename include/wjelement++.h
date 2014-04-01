@@ -13,8 +13,6 @@
 #include <list>
 #include <boost/regex.hpp>
 
-using namespace ::std;	
-
 
 namespace WJPP
 {
@@ -55,7 +53,7 @@ namespace WJPP
 	typedef NodeMap::iterator									NodeMapItr;
 	typedef NodeMap*													NodeMapPtr;
 
-	typedef vector<string>										StringVect;
+	typedef std::vector<std::string>					StringVect;
 	typedef StringVect::iterator							StringVectItr;
 	typedef StringVect::size_type							StringVectST;
 
@@ -93,49 +91,49 @@ namespace WJPP
 
 	protected:
 		URIPtr				m_pBaseURI;
-		string				m_mode;
-		string				m_host;
-		string				m_path;
-		string				m_query;
-		string				m_jsonPointer;
+		std::string		m_mode;
+		std::string		m_host;
+		std::string		m_path;
+		std::string		m_query;
+		std::string		m_jsonPointer;
 		StringVect		m_vectPath;
 		StringVect		m_vectJsonPointer;
 
-		static string	decodeJsonPointer(const string& strPtr);
-		static string	encodeJsonPointer(const string& strPtr);
+		static std::string	decodeJsonPointer(const std::string& strPtr);
+		static std::string	encodeJsonPointer(const std::string& strPtr);
 
 	public:
-		URI(const string& strURI)
+		URI(const std::string& strURI)
 			: m_pBaseURI(NULL)
 		{
 			setURI(strURI);
 		}
 
-		URI(URIPtr pBaseURI = NULL, const string& strURI = "")
+		URI(URIPtr pBaseURI = NULL, const std::string& strURI = "")
 			: m_pBaseURI(pBaseURI)
 		{
 			setURI(strURI);
 		}
 
-		void					setURI(const string& strURI);
+		void							setURI(const std::string& strURI);
 
-		string				getURI();
-		string				getBaseURI();	//!< full URI but without JsonPointers
-		string				getFullURI();
+		std::string				getURI();
+		std::string				getBaseURI();	//!< full URI but without JsonPointers
+		std::string				getFullURI();
 
-		string&				getMode();
-		string&				getHost();
-		string				getPath();
-		string&				getQuery();
-		string				getJsonPointer();
+		std::string&			getMode();
+		std::string&			getHost();
+		std::string				getPath();
+		std::string&			getQuery();
+		std::string				getJsonPointer();
 
-		StringVect		getPathVect();
-		StringVect		getJsonPointerVect();
+		StringVect				getPathVect();
+		StringVect				getJsonPointerVect();
 
-		bool					hasJsonPointer()		{ return !m_vectJsonPointer.empty(); }
+		bool							hasJsonPointer()		{ return !m_vectJsonPointer.empty(); }
 
 		// returns true if mode, host, path, query amd pointer all are empty
-		bool					empty();
+		bool							empty();
 	};
 
 
@@ -150,7 +148,6 @@ namespace WJPP
 	//! Lightweight WJElement wrapper
 	class Node
 	{
-		friend class	Node;
 		friend class	Cache;
 		friend struct Node_cmp;
 
@@ -177,8 +174,8 @@ namespace WJPP
 				// URI
 				URI											_uri;
 
-				Schema(CachePtr cache, URIPtr pURI) : _cache(cache), _mapInlined(NULL), _isRef(false), _uri(pURI) {};
-				Schema(CachePtr cache, const string & strURI) : _cache(cache), _mapInlined(NULL), _isRef(false), _uri(strURI) {};
+				Schema(CachePtr cache, URIPtr pURI) : _cache(cache), _isRef(false), _mapInlined(NULL), _uri(pURI) {};
+				Schema(CachePtr cache, const std::string & strURI) : _cache(cache), _isRef(false), _mapInlined(NULL), _uri(strURI) {};
 				~Schema()
 				{
 					delete _mapInlined;
@@ -225,8 +222,8 @@ namespace WJPP
 
 			// remove and add a schema to the validators
 			void										unregInlineSchema(Node& node);
-			void										regInlineSchema(Node& node, const string& strJsnPtr);
-			Node										getInlineSchema(const string& strJsnPtr);
+			void										regInlineSchema(Node& node, const std::string& strJsnPtr);
+			Node										getInlineSchema(const std::string& strJsnPtr);
 
 			// simple queries
 			bool										hasSchemaInfo()								{ return _schema() != NULL; }
@@ -237,7 +234,7 @@ namespace WJPP
 			void										removeValidatorSchema(Node& node);
 
 			void										initSchema(CachePtr pCache, URIPtr pURI);
-			void										initSchema(CachePtr pCache, const string& strURI);
+			void										initSchema(CachePtr pCache, const std::string& strURI);
 
 															operator bool()								{ return _e && _e->usr;	}
 			SchemaInfo&							operator=(SchemaInfo& rhs)		{ _e = rhs._e; return *this;	}
@@ -252,37 +249,38 @@ namespace WJPP
 		};
 
 
-		string									_asJsonPointer(string& str);
+		std::string							_asJsonPointer(std::string& str);
 
 		void										_discardValidators();
 
-		ostream &								_dump(ostream & os, int indent);
+		std::ostream &					_dump(std::ostream & os, int indent);
 
 		static Node							_loadMetaSchema(CachePtr pCache);
 		void										_validateMetaSchemaMember(CachePtr pCache);
 
 		static Node							_createEmptySchema(CachePtr pCache);
 
-		bool										_validateType(Node& node, ostream& err, bool log = true);
-		bool										_validateSingleType(Node& node, const string& type);
-		bool										_validateInstance(Node& node, ostream& err, bool log = true);
+		bool										_validateType(Node& node, std::ostream& err, bool log = true);
+		bool										_validateSingleType(Node& node, const std::string& type);
+		bool										_validateInstance(Node& node, std::ostream& err, bool log = true);
 
-		bool										_validateNumber(Node& node, ostream& err, bool log = true);
-		bool										_validateString(Node& node, ostream& err, bool log = true);
-		bool										_validateObject(Node& node, ostream& err, bool log = true);
-		bool										_validateArray(Node& node, ostream& err, bool log = true);
+		bool										_validateNumber(Node& node, std::ostream& err, bool log = true);
+		bool										_validateString(Node& node, std::ostream& err, bool log = true);
+		bool										_validateObject(Node& node, std::ostream& err, bool log = true);
+		bool										_validateArray(Node& node, std::ostream& err, bool log = true);
 
-		Node										_resolveRef(NodeVect& refs = NodeVect());
+		Node										_resolveRef(NodeVect& refs);
+		Node										_resolveRef()													{ NodeVect refs; return _resolveRef(refs); }
 
 		void										_registerInlineSchema();
 		Node										_getInlinedSchema(URI& uri);
 
 		Node										_getRootSchema();
 
-		bool										_markRootAsSchema(CachePtr pCache, const string& strURI = "");
+		bool										_markRootAsSchema(CachePtr pCache, const std::string& strURI = "");
 		bool										_markAsSchema();
 
-		WJElement								_beforeAdd(const string& name);
+		WJElement								_beforeAdd(const std::string& name);
 
 	public:
 		Node(WJElement e = NULL) : _e(e) {}
@@ -296,7 +294,6 @@ namespace WJPP
 		class iterator
 		{
 			friend class Node;
-			friend class Node;
 
 		protected:
 			WJElement _e;
@@ -304,15 +301,15 @@ namespace WJPP
 
 		public:
 			Node				operator*()							{ return Node(_e); }
-			iterator&		operator++(int)					{ if (_e) _e = _e->next; return *this; }
-			bool				operator==(iterator & r){ return _e == r._e; }
-			bool				operator!=(iterator & r){ return _e != r._e; }
-			iterator&		operator=(iterator& rhs){ _e = rhs._e; return *this; }
+			iterator		operator++(int)					{ if (_e) _e = _e->next; return *this; }
+			bool				operator==(iterator r)	{ return _e == r._e; }
+			bool				operator!=(iterator r)	{ return _e != r._e; }
+			iterator		operator=(iterator rhs)	{ _e = rhs._e; return *this; }
 		};
 
 		bool										empty()												{ return !_e || !_e->child; }
 		unsigned int						size()												{ return _e ? _e->count : 0; }
-		iterator								begin()												{ return (_e && _e->child) ? iterator(_e->child) : iterator(NULL); }
+		iterator								begin()												{ return iterator(_e ? _e->child : NULL); }
 		iterator								end()													{ return iterator(); }
 
 		//! Access a child (if isContainer() == false or the element can't be found, the returned elements operator!() will return true) 
@@ -321,8 +318,8 @@ namespace WJPP
 					https://github.com/netmail-open/wjelement/wiki/WJElement-Selectors
 				for a detailed description of selectors
 		*/
-		Node										operator[](const string& str);
-		Node										operator[](const char* str)		{ return operator[](string(str)); }
+		Node										operator[](const std::string& str);
+		Node										operator[](const char* str)		{ return operator[](std::string(str)); }
 		//! Access a child by index (if isContainer() == false or the element can't be found, the returned elements operator!() will return true) 
 		/*! \note this works for both arrays and objects, but is not particularly meaningful for objects
 		    \note it is recommended you use the iterator for iterating instead of this method
@@ -331,17 +328,17 @@ namespace WJPP
 		Node										operator[](int i)							{ return operator[]((unsigned int) i); }
 		//@}
 
-		static Node							parseJson(const string & json);
+		static Node							parseJson(const std::string & json);
 
 		//! The Type of Node
 		WJRType									getType() const								{ return _e ? _e->type : WJR_TYPE_UNKNOWN; }
-		string									getTypeAsString();
-		string									getName();
+		std::string							getTypeAsString();
+		std::string							getName();
 
-		// returns a string vector containing all the names of members this has
+		// returns a std::string vector containing all the names of members this has
 		StringVect							getMembers();
 		// returns true if this is a container that has an immediate child with the specified name
-		bool										isMember(const string& name);
+		bool										isMember(const std::string& name);
 
 		bool										isMetaSchema();
 		bool										isSchema()										{ return SchemaInfo(_e).hasSchemaInfo(); }
@@ -367,7 +364,7 @@ namespace WJPP
 		// attaches the child to this (this must be an array or object and neither this nor child must null)
 		void										attach(Node& child);
 
-		string									asJsonPointer()								{ return _asJsonPointer(string()); }
+		std::string							asJsonPointer()								{ std::string str; return _asJsonPointer(str); }
 
 		bool										operator==(Node& rhs);
 		bool										operator!=(Node& rhs)					{ return !operator==(rhs); } 
@@ -379,35 +376,35 @@ namespace WJPP
 														operator bool()								{ return getBool(); }
 														operator double()							{ return getNum(); }
 														operator int()								{ return getInt(); }
-														operator string()							{ return getString(); }
+														operator std::string()				{ return getString(); }
 */
 
-		ostream &								dump(ostream & os, int indent = 0);
+		std::ostream &					dump(std::ostream & os, int indent = 0);
 
 		//! deletes this' and all its depended WJElements (operator!() will return true after this call;
 		void										discard();
 
-		bool										validateInstance(Node& node, const string& strURI = "");
+		bool										validateInstance(Node& node, const std::string& strURI = "");
 
 		// create roots
 		static Node							createObject();
 		static Node							createArray();
 
 		// add nodes to this (this must be a valid container)
-		Node										addObject(const string& name);
-		Node										addArray(const string& name);
-		Node										addNull(const string& name);
-		Node										addString(const string& name, const string& value);
-		Node										addBool(const string& name, bool value);
-		Node										addInt(const string& name, int value)						{ return addInt32(name, (int32) value); }
-		Node										addInt32(const string& name, int32 value);					
-		Node										addUInt32(const string& name, uint32 value);
-		Node										addInt64(const string& name, int64 value);
-		Node										addUInt64(const string& name, uint64 value);
-		Node										addDouble(const string& name, double value);
+		Node										addObject(const std::string& name);
+		Node										addArray(const std::string& name);
+		Node										addNull(const std::string& name);
+		Node										addString(const std::string& name, const std::string& value);
+		Node										addBool(const std::string& name, bool value);
+		Node										addInt(const std::string& name, int value)						{ return addInt32(name, (int32) value); }
+		Node										addInt32(const std::string& name, int32 value);					
+		Node										addUInt32(const std::string& name, uint32 value);
+		Node										addInt64(const std::string& name, int64 value);
+		Node										addUInt64(const std::string& name, uint64 value);
+		Node										addDouble(const std::string& name, double value);
 
 		// get values
-		string									getString();
+		std::string							getString();
 		bool										getBool();
 		int											getInt()																				{ return (int) getInt32(); }
 		int32										getInt32();
@@ -418,7 +415,7 @@ namespace WJPP
 
 		// set values
 		void										setNull();
-		void										setString(const string& value);
+		void										setString(const std::string& value);
 		void										setBool(bool value);
 		void										setInt(int value)																{ return setInt32((int32) value); }
 		void										setInt32(int32 value);
@@ -438,7 +435,7 @@ namespace WJPP
 	*******************************************************************************************************/
 
 	//! See Cache::loadSchema for an explanation/requirement of function of this type
-	typedef string (*SchemaLoaderFunc)(const string& strURI);
+	typedef std::string (*SchemaLoaderFunc)(const std::string& strURI);
 
 	// ensures cache gets deleted
 	class Cache
@@ -455,11 +452,11 @@ namespace WJPP
 		class IDGenerator
 		{
 		protected:
-			string			m_strID;
+			std::string			m_strID;
 			IDGenerator() : m_strID("http://localhost/schema/aaaa") {};
 
 		public:
-			static string		getID();
+			static std::string		getID();
 
 		};
 
@@ -486,15 +483,15 @@ namespace WJPP
 
 				If the schema is not found, the mothod calls m_fnLoader if it is defined. The method
 				is expected to retrieve the resource at the URI specified and return its raw form to this.
-				Return an empty string to indicate the resource can't be found.
+				Return an empty std::string to indicate the resource can't be found.
 		*/
-		Node							loadSchema(const string& strURI);
+		Node							loadSchema(const std::string& strURI);
 		bool							loadSchema(Node& schema);
 
 		Node							getMetaSchema()							{ return m_metaSchema; }
 		Node							getEmptySchema()						{ return m_emptySchema; }
 
-		string						getUniqueID()								{ return IDGenerator::getID(); }
+		std::string				getUniqueID()								{ return IDGenerator::getID(); }
 
 	};
 

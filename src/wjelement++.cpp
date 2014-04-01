@@ -7,6 +7,8 @@
 
 namespace WJPP
 {
+	using namespace std;
+
 	//============================= H E L P E R S =======================================
 
 	// some helpers to deal with paths and JsonPointers
@@ -542,7 +544,7 @@ namespace WJPP
 		ostrm << getBaseURI();
 
 		if (!jsonPointer.empty())	
-			ostrm << '#/' << jsonPointer;
+			ostrm << "#/" << jsonPointer;
 		else
 			ostrm << '#';
 
@@ -756,6 +758,8 @@ namespace WJPP
 				case WJR_TYPE_TRUE:			return "boolean";
 				case WJR_TYPE_FALSE:		return "boolean";
 				case WJR_TYPE_NULL:			return "null";
+				default:
+					break;
 			}
 		}
 
@@ -1034,6 +1038,7 @@ namespace WJPP
 						return getBool() == rhs.getBool();
 
 					case WJR_TYPE_NULL:
+					case WJR_TYPE_UNKNOWN:
 						return true;
 				}
 			}
@@ -1123,6 +1128,10 @@ namespace WJPP
 
 				case WJR_TYPE_NULL:
 					os << "null";
+					break;
+
+				case WJR_TYPE_UNKNOWN:
+					os << "unknown";
 					break;
 			}
 		}
@@ -1431,6 +1440,9 @@ namespace WJPP
 
 				break;
 			}
+
+			default:
+				break;
 		}
 	}
 
@@ -1607,7 +1619,6 @@ namespace WJPP
 	{
 // if (log) cout << asJsonPointer() << "         < ============ >          " << node.asJsonPointer() << endl;
 
-		Node&				self = *this;
 		Node				ref = _resolveRef();
 		bool				fail = false;
 		Node				validator;
@@ -1639,6 +1650,7 @@ namespace WJPP
 			case WJR_TYPE_TRUE:
 			case WJR_TYPE_FALSE:
 			case WJR_TYPE_NULL:
+			case WJR_TYPE_UNKNOWN:
 				// nothing to do here
 				break;
 		}
@@ -2276,6 +2288,7 @@ namespace WJPP
 			case WJR_TYPE_TRUE:			return (type == "boolean");
 			case WJR_TYPE_FALSE:		return (type == "boolean");
 			case WJR_TYPE_NULL:			return (type == "null");
+			case WJR_TYPE_UNKNOWN:	return (type == "unknown");
 		}
 
 		return true;
@@ -2305,7 +2318,7 @@ namespace WJPP
 				{
 					strT = (*i).getString();
 
-					if (success = _validateSingleType(node, strT))
+					if ((success = _validateSingleType(node, strT)))
 						break;
 
 					strTypes += " " + strT;
@@ -2464,7 +2477,7 @@ namespace WJPP
 		if (!isBoolean())
 			throw std::runtime_error("node doesn't understand getBool()");
 		
-		return WJEBool(_e, ".", WJE_GET, NULL) == 1 ? true : false; 
+		return WJEBool(_e, (char*) ".", WJE_GET, NULL) == 1 ? true : false; 
 	}
 
 
@@ -2474,7 +2487,7 @@ namespace WJPP
 		if (!isInteger())
 			throw std::runtime_error("node doesn't understand getInt32()");
 		
-		return WJEInt32(_e, ".", WJE_GET, NULL); 
+		return WJEInt32(_e, (char*) ".", WJE_GET, NULL); 
 	}
 
 
@@ -2484,7 +2497,7 @@ namespace WJPP
 		if (!isInteger())
 			throw std::runtime_error("node doesn't understand getUInt32()");
 		
-		return WJEUInt32(_e, ".", WJE_GET, NULL); 
+		return WJEUInt32(_e, (char*) ".", WJE_GET, NULL); 
 	}
 
 
@@ -2494,7 +2507,7 @@ namespace WJPP
 		if (!isInteger())
 			throw std::runtime_error("node doesn't understand getInt64()");
 		
-		return WJEInt64(_e, ".", WJE_GET, NULL); 
+		return WJEInt64(_e, (char*) ".", WJE_GET, NULL); 
 	}
 
 
@@ -2504,7 +2517,7 @@ namespace WJPP
 		if (!isInteger())
 			throw std::runtime_error("node doesn't understand getUInt64()");
 		
-		return WJEUInt64(_e, ".", WJE_GET, NULL); 
+		return WJEUInt64(_e, (char*) ".", WJE_GET, NULL); 
 	}
 
 
@@ -2515,9 +2528,9 @@ namespace WJPP
 			throw std::runtime_error("node doesn't understand getNum()");
 
 		if (isInteger())
-			return (double) WJEInt64(_e, ".", WJE_GET, NULL);
+			return (double) WJEInt64(_e, (char*) ".", WJE_GET, NULL);
 
-		return WJEDouble(_e, ".", WJE_GET, NULL); 
+		return WJEDouble(_e, (char*) ".", WJE_GET, NULL); 
 	}
 
 
@@ -2527,7 +2540,7 @@ namespace WJPP
 		if (!isString())
 			throw std::runtime_error("node doesn't understand getString()");
 		
-		return WJEString(_e, ".", WJE_GET, NULL); 
+		return WJEString(_e, (char*) ".", WJE_GET, NULL); 
 	}
 
 
