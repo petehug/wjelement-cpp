@@ -5,9 +5,9 @@
 #define	SCHEMA_REF	"$ref"
 #define	SCHEMA_ID		"id"
 
+using namespace std;
 namespace WJPP
 {
-	using namespace std;
 
 	//============================= H E L P E R S =======================================
 
@@ -709,8 +709,8 @@ namespace WJPP
 
 
 
-	/* static */
-	Node Node::parseJson(const string & json)
+	/* static */ 
+	Node Node::parseJson(const std::string & json)
 	{
 		WJReader		reader = NULL;
 		Node				node;
@@ -1790,8 +1790,8 @@ namespace WJPP
 		if (node.isNumber() || node.isInteger())
 		{
 			Node					schemaProperty;
-			double				multipleOf, maximum, minimum;
-			bool					exclusiveMinimum, exclusiveMaximum, hasMin = false, hasMax = false;
+			double				multipleOf, maximum=0.0, minimum=0.0;
+			bool					exclusiveMinimum=false, exclusiveMaximum=false, hasMin = false, hasMax = false;
 
 			schemaProperty = self["multipleOf"];
 			multipleOf = schemaProperty ? schemaProperty.getNum() : 0;

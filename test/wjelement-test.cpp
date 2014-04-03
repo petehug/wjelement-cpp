@@ -7,13 +7,12 @@
 HeapChecker	HeapChecker::M_HeapChecker;
 #endif
 
+#include <wjelement++.h>
+
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
 
-#include <wjelement++.h>
-
-#include "OutboundHttpRequest.h"
 #include "Exception.h"
 
 #ifndef FILE_PATH_SEPARATOR
@@ -25,7 +24,6 @@ HeapChecker	HeapChecker::M_HeapChecker;
 #endif
 
 using namespace WJPP;
-using namespace TWO::HTTP;
 using namespace std;
 
 int main(int argc, char **argv)
@@ -62,11 +60,10 @@ int main(int argc, char **argv)
 
 	Cache											cache;
 	string										fileName, testPath = string(".." FILE_PATH_SEPARATOR ".." FILE_PATH_SEPARATOR "draft4-tests" FILE_PATH_SEPARATOR);
-	JSONHttpRequest						httpRequest;
 	ostringstream							ostrm;
 	NodeVect									vectTests;
 	bool											fail = false;
-	int												testFilter[] = { 0, 27, 0, 0 };  // [0]: if 0 ignore, the others represent the test you want
+	unsigned int							testFilter[] = { 0, 0, 0 };  // if you want all from test 3 do { 3, 0, 0 }, all from test 23.4 do { 23, 4, 0 } or just test 12.5.2 do { 12, 5, 2 } or leave all 0 to disable all filtering
 	ostringstream							currtest;
 	Node											tests, test, schema, subtests, subtest, data;
 
@@ -74,7 +71,7 @@ int main(int argc, char **argv)
 	{
 		for (unsigned int i = 0; i < sizeof(names)/sizeof(string); i++)
 		{
-			if (testFilter[0] && testFilter[1] && (i+1) != testFilter[1]) continue;
+			if (testFilter[0] && (i+1) != testFilter[0]) continue;
 
 			fileName = testPath + names[i] + ".json";
 
@@ -85,18 +82,21 @@ int main(int argc, char **argv)
 			std::ifstream		testFile(fileName.c_str());
 			std::string			json((istreambuf_iterator<char>(testFile)), istreambuf_iterator<char>());
 
+			if (json.empty())
+				throw runtime_error(fileName + " could not be read or is empty");
+ 
 			tests = Node::parseJson(json);
 
 			if (tests)
 			{
-				int j = 0;
+				unsigned int j = 0;
 
 				// shows test descriptions
 				for (Node::iterator itr1 = tests.begin(); itr1 != tests.end(); itr1++)
 				{
 					j++;
 
-					if (testFilter[0] && testFilter[2] && j != testFilter[2]) continue;
+					if (testFilter[1] && j != testFilter[1]) continue;
 
 					test = *itr1;
 					schema = test["schema"];
@@ -129,13 +129,13 @@ int main(int argc, char **argv)
 
 						// deal with individual tests
 						subtests = test["tests"];
-						int k = 0;
+						unsigned int k = 0;
 
 						for (Node::iterator itr2 = subtests.begin(); itr2 != subtests.end(); itr2++)
 						{
 							k++;
 
-							if (testFilter[0] && testFilter[3] && k != testFilter[3]) continue;
+							if (testFilter[2] && k != testFilter[2]) continue;
 
 							subtest = *itr2;
 							data = subtest["data"];
@@ -181,7 +181,7 @@ int main(int argc, char **argv)
 	}
 	catch (...)
 	{
-		D3::GenericExceptionHandler("main() caught an exception.");
+		handleGenericException();
 		data.discard();
 		schema.discard();
 		tests.discard();

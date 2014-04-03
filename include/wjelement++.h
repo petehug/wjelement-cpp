@@ -1,8 +1,10 @@
 #ifndef _wjelementcpp_h_
 #define _wjelementcpp_h_
 
-//#include "OutboundHttpRequest.h"
-#include <wjelement.h>
+extern "C"
+{
+	#include <wjelement.h>
+}
 #include <iostream>
 #include <iomanip>
 #include <sstream>
