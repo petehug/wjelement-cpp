@@ -1156,7 +1156,7 @@ namespace WJPP
 			if (!pInfo)
 			{
 				pInfo = new Info();
-				_e->usr = (void*) pInfo;
+				_e->client = (void*) pInfo;
 			}
 
 			return pInfo;
@@ -1281,7 +1281,7 @@ namespace WJPP
 		{
 			Info* pInfo = _info();
 			delete pInfo;
-			_e->usr = NULL;
+			_e->client = NULL;
 		}
 	}
 

@@ -201,7 +201,7 @@ namespace WJPP
 
 			WJElement	_e;
 
-			Info*										_info()												{ return _e && _e->usr ? (Info*) _e->usr : NULL; }
+			Info*										_info()												{ return _e && _e->client ? (Info*) _e->client : NULL; }
 			Info*										_createInfo();
 			WJEList*								_createValidators();
 
@@ -238,7 +238,7 @@ namespace WJPP
 			void										initSchema(CachePtr pCache, URIPtr pURI);
 			void										initSchema(CachePtr pCache, const std::string& strURI);
 
-															operator bool()								{ return _e && _e->usr;	}
+															operator bool()								{ return _e && _e->client;	}
 			SchemaInfo&							operator=(SchemaInfo& rhs)		{ _e = rhs._e; return *this;	}
 			SchemaInfo&							operator=(Node& rhs)					{ _e = *rhs; return *this;	}
 			SchemaInfo&							operator=(WJElement e)				{ _e = e;	return *this;	}
