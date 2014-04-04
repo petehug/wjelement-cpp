@@ -42,7 +42,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../wjelement/include;&quot;../../include&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;USE_APAL_JSON_SCHEMA"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;USE_APAL_JSON_SCHEMA;WJE_DISTINGUISH_INTEGER_TYPE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -119,7 +119,7 @@
 				Optimization="2"
 				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="../../wjelement/include;&quot;../include&quot;"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;USE_APAL_JSON_SCHEMA;WJE_DISTINGUISH_INTEGER_TYPE"
 				RuntimeLibrary="2"
 				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="0"
@@ -181,10 +181,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\OutboundHttpRequest.cpp"
-				>
-			</File>
-			<File
 				RelativePath="..\wjelement-test.cpp"
 				>
 			</File>
@@ -200,10 +196,6 @@
 			</File>
 			<File
 				RelativePath="..\HeapChecker.h"
-				>
-			</File>
-			<File
-				RelativePath="..\OutboundHttpRequest.h"
 				>
 			</File>
 		</Filter>
