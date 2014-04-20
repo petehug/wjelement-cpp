@@ -65,7 +65,7 @@ int main(int argc, char **argv)
 	bool											fail = false;
 	unsigned int							testFilter[] = { 0, 0, 0 };  // if you want all from test 3 do { 3, 0, 0 }, all from test 23.4 do { 23, 4, 0 } or just test 12.5.2 do { 12, 5, 2 } or leave all 0 to disable all filtering
 	ostringstream							currtest;
-	Node											tests, test, schema, subtests, subtest, data;
+	Node											tests, test, schema, subtests, subtest, data, errors;
 
 	try
 	{
@@ -114,11 +114,13 @@ int main(int argc, char **argv)
 						schema.dump(cout, 4);
 
 						// validate and register the schema
-						if (!cache.loadSchema(schema))
+						if (!cache.loadSchema(schema, errors))
 						{
 							schema.dump(cout, 4);
 							cout << "    FAILURE SCHEMA\n";
+							errors.dump(cout, 4);
 
+							errors.discard();
 							schema.discard();
 							continue;
 						}
@@ -142,12 +144,12 @@ int main(int argc, char **argv)
 
 							data.detach();
 
-							bool shoudSucceed = subtest["valid"].getBool();
+							bool shouldSucceed = subtest["valid"].getBool();
 
 							cout << endl;
 							cout << "        -----------------------------------------------------------" << endl;
 							cout << "        " << (i + 1) << "." << j << "." << k << ". " << subtest["description"].getString() << endl;
-							cout << "        should " << (shoudSucceed ? "" : "not ") << "validate" << endl;
+							cout << "        should " << (shouldSucceed ? "" : "not ") << "validate" << endl;
 							cout << "        data: ";
 
 							data.dump(cout, 8);
@@ -155,18 +157,31 @@ int main(int argc, char **argv)
 							if (!data.isContainer())
 								cout << endl;
 
-
-							if (schema.validateInstance(data) == shoudSucceed)
+							if (schema.validateInstance(data, errors) == shouldSucceed)
 							{
+								if (errors)
+								{
+									cout << "        VALIDATION ERRORS\n";
+									errors.dump(cout, 8);
+								}
+
 								cout << "        SUCCESS\n";
 							}
 							else
 							{
 								fail = true;
+
+								if (errors)
+								{
+									cout << "        VALIDATION ERRORS\n";
+									errors.dump(cout, 8);
+								}
+
 								cout << "        FAILURE\n";
 								data.dump(cout, 8);
 							}
 
+							errors.discard();
 							data.discard();
 						}
 					}

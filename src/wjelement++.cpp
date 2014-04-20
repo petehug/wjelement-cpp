@@ -43,6 +43,59 @@ namespace WJPP
 
 
 
+	// given a JSON pointer, this method looks for the last numeric segment /[0-9]+/ and replaces it with /*/
+	string substituteIndex(string strJP)
+	{
+		string::reverse_iterator	i, j;
+		string										strOut;
+		bool											sub = true;
+
+		for (i = strJP.rbegin(); i != strJP.rend(); i++)
+		{
+			if (sub && *i == '/')
+			{
+				int	count = 0;
+				j = i;
+				j++;
+				while (j != strJP.rend())
+				{
+					if (*j >= '0' && *j <= '9')
+					{
+						j++;
+						count++;
+						continue;
+					}
+
+					if (*j == '/')
+					{
+						if (count > 0)
+						{
+							sub = false;
+							strOut += "/*/";
+							i = j;
+							break;
+						}
+					}
+
+					break;
+				}
+
+				if (sub)
+					strOut += *i;
+			}
+			else
+			{
+				strOut += *i;
+			}
+		}
+
+		std::reverse(strOut.begin(), strOut.end());
+
+		return strOut;
+	}
+
+
+
 	//===================================================================================
 
 	static string G_strMetaSchema(
@@ -633,15 +686,15 @@ namespace WJPP
 
 
 
-	string Node::_asJsonPointer(string& str)
+	string Node::_asJsonPointer(string& str, bool zeroIndex)
 	{
 		if (_e && _e->parent)
 		{
-			str = string("/") + getName() + str;
-			return Node(_e->parent)._asJsonPointer(str);
+			str = string("/") + _getName(zeroIndex) + str;
+			return Node(_e->parent)._asJsonPointer(str, zeroIndex);
 		}
 
-		str = getName() + str;
+		str = _getName(zeroIndex) + str;
 
 		return str;
 	}
@@ -650,7 +703,6 @@ namespace WJPP
 
 	void Node::discard()
 	{
-// cout << "deleting ===> " << asJsonPointer() << endl;
 		SchemaInfo	si(_e);
 		WJElement		next, child = _e && _e->child ? _e->child : NULL;
 
@@ -768,7 +820,7 @@ namespace WJPP
 
 
 
-	string Node::getName()
+	string Node::_getName(bool zeroIndex)
 	{
 		if (_e)
 		{
@@ -779,18 +831,25 @@ namespace WJPP
 			{
 				if (_e->parent->type == WJR_TYPE_ARRAY)
 				{
-					WJElement prev = _e->prev;
-					int				i=0;
-
-					while (prev)
+					if (zeroIndex)
 					{
-						prev=prev->prev;
-						i++;
+						return "*";
 					}
+					else
+					{
+						WJElement prev = _e->prev;
+						int				i=0;
 
-					ostringstream strm;
-					strm << i;
-					return strm.str();
+						while (prev)
+						{
+							prev=prev->prev;
+							i++;
+						}
+
+						ostringstream strm;
+						strm << i;
+						return strm.str();
+					}
 				}
 			}
 			else
@@ -859,41 +918,44 @@ namespace WJPP
 
 
 
-	Node Node::operator[](const string& str)
+	Node Node::operator[](const char* name)
 	{
 		WJElement c = _e ? _e->child : NULL;
 
-		while (c)
+		if (c)
 		{
-			if (c->name && str == c->name)
-				break;
-
-			c = c->next;
-		}
-
-		if (!c && isArray())
-		{
-			// check if the key is all digits and if it is convert to number and use numeric operator[]
-			bool							numeric = true;
-			string::size_type	pos = 0;
-
-			while (pos < str.length())
+			if (isArray())
 			{
-				char c = str[pos++];
-				if (c < '0' || c > '9')
+				// expect numeric string
+				bool							numeric = true;
+				unsigned int			idx = 0;
+				const char*				pos = name;
+				char							c;
+
+				while (c = *pos++)
 				{
-					numeric = false;
-					break;
+					if (c < '0' || c > '9' || idx > (UINT_MAX / 10))
+					{
+						numeric = false;
+						break;
+					}
+
+					idx *= 10;
+					idx += c - '0';
 				}
+
+				if (numeric)
+					return operator[](idx);
 			}
-
-			if (numeric)
+			else
 			{
-				unsigned int				i;
-				std::istringstream	istrm(str);
-				istrm >> i;
+				while (c)
+				{
+					if (strcmp(c->name, name) == 0)
+						break;
 
-				return operator[](i);
+					c = c->next;
+				}
 			}
 		}
 
@@ -988,7 +1050,7 @@ namespace WJPP
 		if (!child)
 			throw runtime_error("attach(NULL) called");
 
-		if (!isArray() || isObject())
+		if (!isArray() && !isObject())
 			throw runtime_error("can only attach node to object or array node");
 
 		WJEAttach(_e, child);
@@ -1197,12 +1259,8 @@ namespace WJPP
 			NodeMapItr	itr = s->_mapInlined->find(strURI);
 
 			if (itr != s->_mapInlined->end())
-			{
-				cout << "Root schema already has inline schema " << strURI << ", can't add " << node.asJsonPointer() << endl;
-				return;
-			}
+				throw runtime_error(std::string("Root schema already has inline schema ") + strURI + ", can't add " + node.asJsonPointer());
 
-			cout << setw(40) << strURI << " <===> " << node.asJsonPointer() << "              ADD TO INLINE INDEX\n";
 			(*s->_mapInlined)[strURI] = node;
 		}
 	}
@@ -1220,10 +1278,7 @@ namespace WJPP
 			NodeMapItr	itr = s_root->_mapInlined->find(strURI);
 
 			if (itr  != s_root->_mapInlined->end())
-			{
 				s_root->_mapInlined->erase(itr);
-				cout << setw(40) << strURI << " <===> " << node.asJsonPointer() << "              DELETE FROM INLINE INDEX\n";
-			}
 		}
 	}
 
@@ -1472,20 +1527,42 @@ namespace WJPP
 
 
 
-	Node Node::_resolveRef(NodeVect& refs)
+	Node Node::_resolveRef(Node& errors)
+	{
+		NodeVect	refs;
+		Node			ref;
+
+		try
+		{
+		 ref = _resolveRef(refs, errors);
+		}
+		catch (std::runtime_error & e)
+		{
+			if (!errors)
+				throw;
+
+			errors._validationError(*this, Node(), string("failed to resolve $ref, ") + e.what());
+
+			return *this;
+		}
+
+		return ref;
+	}
+
+
+
+	Node Node::_resolveRef(NodeVect& refs, Node& errors)
 	{
 		Node				self = *this;
 		SchemaInfo	si(self);
 
 		if (self)
 		{
-			// prevent cyclic recursions
+			// prevent cyclic references
 			for (unsigned int i = 0; i < refs.size(); i++)
 			{
 				if (*self == *(refs[i]))
-				{
 					throw runtime_error(string("can't resolve $ref ") + refs[0][SCHEMA_REF].getString() + " because of recursions");
-				}
 			}
 
 			if (si.isRef())
@@ -1503,7 +1580,7 @@ namespace WJPP
 
 				// The reference could be to another schema or inlined
 				if (!strRefBaseURI.empty())
-					refSchema = si.cache()->loadSchema(strRefBaseURI);
+					refSchema = si.cache()->loadSchema(strRefBaseURI, errors);
 				else
 					refSchema = refSchema._getRootSchema();
 
@@ -1516,7 +1593,7 @@ namespace WJPP
 				SchemaInfo	si_ref(refSchema);
 
 				if (si_ref.isRef())
-					return refSchema._resolveRef(refs);
+					return refSchema._resolveRef(refs, errors);
 
 				return refSchema;
 			}
@@ -1543,33 +1620,38 @@ namespace WJPP
 	{
 		Node						schema;
 
-		if (isSchema() && uri.hasJsonPointer())
+		if (isSchema())
 		{
 			SchemaInfo			si(*this);
 
-			if ( (schema = si.getInlineSchema(uri.getJsonPointer())) )
+			if ( (schema = si.getInlineSchema(uri.getFullURI())) )
 				return schema;
 
-			// the JSON pointer could reference any element so traverse this
-			StringVect	vect = uri.getJsonPointerVect();
-			Node				curr = *this;
+			// if the uri is a JSON pointer traverse this
+			string					baseURI = uri.getBaseURI();
 
-			for (unsigned int i = 0; i < vect.size(); i++)
+			if (uri.hasJsonPointer() && (baseURI.empty() || si.uri()->getBaseURI() == baseURI))
 			{
-				try
+				StringVect	vect = uri.getJsonPointerVect();
+				Node				curr = *this;
+
+				for (unsigned int i = 0; i < vect.size(); i++)
 				{
-					curr = curr[vect[i]];
+					try
+					{
+						curr = curr[vect[i]];
+					}
+					catch(...)
+					{
+						return NULL;
+					}
 				}
-				catch(...)
-				{
-					return NULL;
-				}
+
+				if (curr)
+					return curr;
 			}
 
-			if (!curr)
-				throw runtime_error(string("relative schema ") + uri.getFullURI() + " not found");
-			
-			return curr;
+			return Node();			
 		}
 
 		return *this;
@@ -1581,69 +1663,67 @@ namespace WJPP
 	Node Node::_createEmptySchema(CachePtr pCache)
 	{
 		Node		empty = Node::parseJson("{}");
+		Node		errors = Node::createArray();
 
-		if (empty && pCache->getMetaSchema().validateInstance(empty))
+		if (empty && pCache->getMetaSchema().validateInstance(empty, errors))
+		{
+			errors.discard();
 			return empty;
+		}
 
 		empty.discard();
+		errors.discard();
 
 		return Node();
 	}
 
 
 
-	bool Node::validateInstance(Node& node, const string& strURI)
+	bool Node::validateInstance(Node& node, Node& errors, const string& strURI)
 	{
-		// this must be a schema!
-		if (isSchema())
-		{
-			// this maybe a reference to the meta schema
-			Node				ref = _resolveRef();
-			SchemaInfo	si_schema(*this);
+		if (!isSchema())
+			throw runtime_error("validateInstance message sent to non schema node");
 
-			if (ref.isMetaSchema())
-				if (!node._markRootAsSchema(si_schema.cache(), strURI))
-					return false;
+		// this maybe a reference so resolve it
+		Node				ref = _resolveRef(errors);
+		SchemaInfo	si_schema(*this);
 
-			return _validateInstance(node, cout);
-		}
+		if (ref.isMetaSchema())
+			if (!node._markRootAsSchema(si_schema.cache(), strURI))
+				return false;
 
-		throw runtime_error("validateInstance message sent to non schema node");
-
-		return false;
+		return _validateInstance(node, errors, true);
 	}
 
 
 
-	bool Node::_validateInstance(Node& node, ostream& err, bool log)
+	bool Node::_validateInstance(Node& node, Node& errors, bool log)
 	{
-// if (log) cout << asJsonPointer() << "         < ============ >          " << node.asJsonPointer() << endl;
-
-		Node				ref = _resolveRef();
+		Node				ref = _resolveRef(errors);
 		bool				fail = false;
 		Node				validator;
 
 		// if this' type is worng lets forget about it
-		if (!ref._validateType(node, err, log))
+		if (!ref._validateType(node, errors, log))
 			return false;
 
 		switch (node.getType())
 		{
 			case WJR_TYPE_OBJECT:
-				fail = !ref._validateObject(node, err, log) ? true : fail;
+				fail = !ref._validateObject(node, errors, log) ? true : fail;
 				break;
 
 			case WJR_TYPE_ARRAY:
-				fail = !ref._validateArray(node, err, log) ? true : fail;
+				fail = !ref._validateArray(node, errors, log) ? true : fail;
 				break;
 
 			case WJR_TYPE_INTEGER:
 			case WJR_TYPE_NUMBER:
-				fail = !ref._validateNumber(node, err, log) ? true : fail;
+				fail = !ref._validateNumber(node, errors, log) ? true : fail;
 				break;
 
 			case WJR_TYPE_STRING:
-				fail = !ref._validateString(node, err, log) ? true : fail;
+				fail = !ref._validateString(node, errors, log) ? true : fail;
 				break;
 
 			case WJR_TYPE_BOOL:
@@ -1664,9 +1744,11 @@ namespace WJPP
 			{
 				Node		schema = *i;
 
-				if (!schema._validateInstance(node, err, log))
+				if (!schema._validateInstance(node, errors, log))
 				{
-					if (log) err << "Node " << node.asJsonPointer() << " fails allOf validation against schema" << schema.asJsonPointer() << endl;
+					if (log)
+						errors._validationError(schema, node, "instance fails 'allOf' validation");
+
 					fail = true;
 				}
 				else
@@ -1677,7 +1759,7 @@ namespace WJPP
 			}
 		}
 
-		// validate against allOf
+		// validate against anyOf
 		validator = ref["anyOf"];
 
 		if (validator)
@@ -1688,7 +1770,7 @@ namespace WJPP
 			{
 				Node		schema = *i;
 
-				if (schema._validateInstance(node, err, false))
+				if (schema._validateInstance(node, errors, false))
 				{
 					SchemaInfo	si(node);
 					si.addValidatorSchema(schema);
@@ -1698,7 +1780,9 @@ namespace WJPP
 
 			if (!valid)
 			{
-				if (log) err << "Node " << node.asJsonPointer() << " fails anyOf validation." << endl;
+				if (log)
+					errors._validationError(*this, node, "instance fails 'anyOf' validation");
+
 				fail = true;
 			}
 		}
@@ -1708,31 +1792,29 @@ namespace WJPP
 
 		if (validator)
 		{
-			bool	hasOne = false;
+			int	matches = 0;
 
 			for (iterator i = validator.begin(); i != validator.end(); i++)
 			{
 				Node		schema = *i;
 
-				if (schema._validateInstance(node, err, false))
+				if (schema._validateInstance(node, errors, false))
 				{
+					matches++;
+
+					if (matches > 1)
+						break;
+
 					SchemaInfo	si(node);
 					si.addValidatorSchema(schema);
-
-					if (hasOne)
-					{
-						if (log) err << "Node " << node.asJsonPointer() << " fails oneOf validation." << endl;
-						fail = true;
-						break;
-					}
-
-					hasOne = true;
 				}
 			}
 
-			if (!hasOne)
+			if (matches != 1)
 			{
-				if (log) err << "Node " << node.asJsonPointer() << " fails oneOf validation." << endl;
+				if (log)
+					errors._validationError(*this, node, "instance fails 'oneOf' validation");
+
 				fail = true;
 			}
 		}
@@ -1742,9 +1824,11 @@ namespace WJPP
 
 		if (validator)
 		{
-			if (validator._validateInstance(node, err, false))
+			if (validator._validateInstance(node, errors, false))
 			{
-				if (log) err << "Node " << node.asJsonPointer() << " fails validation against validator" << validator.asJsonPointer() << endl;
+				if (log)
+					errors._validationError(*this, node, "instance fails 'not' validation");
+
 				fail = true;
 			}
 		}
@@ -1769,7 +1853,9 @@ namespace WJPP
 
 			if (!valid)
 			{
-				if (log) err << "Node " << node.asJsonPointer() << " fails validation against validator " << validator.asJsonPointer() << endl;
+				if (log)
+					errors._validationError(*this, node, "instance fails 'enum' validation");
+
 				fail = true;
 			}
 		}
@@ -1779,7 +1865,7 @@ namespace WJPP
 
 
 
-	bool Node::_validateNumber(Node& node, ostream& err, bool log)
+	bool Node::_validateNumber(Node& node, Node& errors, bool log)
 	{
 		bool				fail = false;
 		Node&				self = *this;
@@ -1820,7 +1906,13 @@ namespace WJPP
 
 				if (fmod(val, multipleOf) != 0.0)
 				{
-					if (log) err << node.asJsonPointer() << " is not divisible by " << multipleOf << endl;
+					if (log)
+					{
+						ostringstream ostrm;
+						ostrm << "instance is not divisible by " << multipleOf;
+						errors._validationError(*this, node, ostrm.str());
+					}
+
 					fail = true;
 				}
 			}
@@ -1831,7 +1923,13 @@ namespace WJPP
 				{
 					if (node.getNum() <= minimum)
 					{
-						if (log) err << node.asJsonPointer() << " must be greater than " << minimum << endl;
+						if (log)
+						{
+							ostringstream ostrm;
+							ostrm << "instance must be greater than " << minimum;
+							errors._validationError(*this, node, ostrm.str());
+						}
+
 						fail = true;
 					}
 				}
@@ -1839,7 +1937,13 @@ namespace WJPP
 				{
 					if (node.getNum() < minimum)
 					{
-						if (log) err << node.asJsonPointer() << " must be greater than or equal to " << minimum << endl;
+						if (log)
+						{
+							ostringstream ostrm;
+							ostrm << "instance must be greater than or equal to " << minimum;
+							errors._validationError(*this, node, ostrm.str());
+						}
+
 						fail = true;
 					}
 				}
@@ -1851,7 +1955,13 @@ namespace WJPP
 				{
 					if (node.getNum() >= maximum)
 					{
-						if (log) err << node.asJsonPointer() << " must be less than " << maximum << endl;
+						if (log)
+						{
+							ostringstream ostrm;
+							ostrm << "instance must be less than " << maximum;
+							errors._validationError(*this, node, ostrm.str());
+						}
+
 						fail = true;
 					}
 				}
@@ -1859,7 +1969,13 @@ namespace WJPP
 				{
 					if (node.getNum() > maximum)
 					{
-						if (log) err << node.asJsonPointer() << " must be less than or equal to " << maximum << endl;
+						if (log)
+						{
+							ostringstream ostrm;
+							ostrm << "instance must be less than or equal to " << maximum;
+							errors._validationError(*this, node, ostrm.str());
+						}
+
 						fail = true;
 					}
 				}
@@ -1871,7 +1987,7 @@ namespace WJPP
 
 
 
-	bool Node::_validateString(Node& node, ostream& err, bool log)
+	bool Node::_validateString(Node& node, Node& errors, bool log)
 	{
 		Node&			self = *this;
 		bool			fail = false;
@@ -1890,13 +2006,25 @@ namespace WJPP
 
 			if (minLength && node.getString().size() < (unsigned) minLength)
 			{
-				if (log) err << node.asJsonPointer() << " is shorter than " << minLength << endl;
+				if (log)
+				{
+					ostringstream ostrm;
+					ostrm << "instance is shorter than " << minLength;
+					errors._validationError(*this, node, ostrm.str());
+				}
+
 				fail = true;
 			}
 
 			if (maxLength && node.getString().size() > (unsigned) maxLength)
 			{
-				if (log) err << node.asJsonPointer() << " is longer than " << minLength << endl;
+				if (log)
+				{
+					ostringstream ostrm;
+					ostrm << "instance is longer than " << minLength;
+					errors._validationError(*this, node, ostrm.str());
+				}
+
 				fail = true;
 			}
 
@@ -1904,19 +2032,34 @@ namespace WJPP
 			{
 				try
 				{
-					if (boost::regex_match(node.getString(), boost::regex(pattern, boost::regex_constants::ECMAScript)))
+					if (!boost::regex_match(node.getString(), boost::regex(pattern, boost::regex_constants::ECMAScript)))
 					{
-						if (log) err << node.asJsonPointer() << " pattern doesn't match." << endl;
+						if (log)
+							errors._validationError(*this, node, "pattern doesn't match");
+							
 						fail = true;
 					}
 				}
 				catch (boost::regex_error & b)
 				{
-					if (log) err << "schema " << self.asJsonPointer() << " specifies pattern '" << pattern << "' which is not a valid ECMAScript pattern. " << b.what() << endl;
+					if (log)
+					{
+						ostringstream ostrm;
+						ostrm << "schema pattern '" << pattern << "' is not a valid ECMAScript pattern, " << b.what();
+						errors._validationError(*this, node, ostrm.str());
+					}
+
+					fail = true;
 				}
 				catch (runtime_error & s)
 				{
-					if (log) err << node.asJsonPointer() << " pattern doesn't match. " << s.what() << endl;
+					if (log)
+					{
+						ostringstream ostrm;
+						ostrm << "pattern doesn't match, " << s.what();
+						errors._validationError(*this, node, ostrm.str());
+					}
+
 					fail = true;
 				}
 			}
@@ -1927,7 +2070,7 @@ namespace WJPP
 
 
 
-	bool Node::_validateArray(Node& node, ostream& err, bool log)
+	bool Node::_validateArray(Node& node, Node& errors, bool log)
 	{
 		Node&				self = *this;
 		SchemaInfo	si(self);
@@ -1960,11 +2103,8 @@ namespace WJPP
 				{
 					Node	item = *i;
 
-					if (!items._validateInstance(item, err, log))
-					{
-						if (log) err << "Array element " << item.asJsonPointer() << " does not comply with schema " << items.asJsonPointer() << " for items." << endl;
+					if (!items._validateInstance(item, errors, log))
 						fail = true;
-					}
 				}
 			}
 			else if (items.isArray())
@@ -1978,9 +2118,11 @@ namespace WJPP
 					Node		schema = *i;
 					Node		item = *j;
 
-					if (!schema._validateInstance(item, err, log))
+					if (!schema._validateInstance(item, errors, log))
 					{
-						if (log) err << "Array element " << item.asJsonPointer() << " does not comply with schema " << schema.asJsonPointer() << " for items." << endl;
+						if (log)
+							errors._validationError(*this, node, "instance fails 'items' validation");
+
 						fail = true;
 					}
 				}
@@ -1995,7 +2137,9 @@ namespace WJPP
 					{
 						if (node.size() > items.size())
 						{
-							if (log) err << "Array " << node.asJsonPointer() << " has extra items which the schema prohibits." << endl;
+							if (log)
+								errors._validationError(*this, node, "schema does not allow extra items");
+
 							fail = true;
 						}
 					}
@@ -2010,9 +2154,11 @@ namespace WJPP
 						if (i == items.end())
 						{
 							Node	item = *j;
-							if (!additionalItems._validateInstance(item, err, log))
+							if (!additionalItems._validateInstance(item, errors, log))
 							{
-								if (log) err << "Array element " << item.asJsonPointer() << " does not comply with schema" << additionalItems.asJsonPointer() << endl;
+								if (log)
+									errors._validationError(*this, node, "instance fails 'additionalItems' validation");
+
 								fail = true;
 							}
 						}
@@ -2028,7 +2174,13 @@ namespace WJPP
 			{
 				if (node.size() < (unsigned) minItems)
 				{
-					if (log) err << "Array " << node.asJsonPointer() << " has less than the minimum of " << minItems << " items." << endl;
+					if (log)
+					{
+						ostringstream ostrm;
+						ostrm << "instance has less than the minimum of " << minItems << " items";
+						errors._validationError(*this, node, ostrm.str());
+					}
+
 					fail = true;
 				}
 			}
@@ -2037,7 +2189,13 @@ namespace WJPP
 			{
 				if (node.size() > (unsigned) maxItems)
 				{
-					if (log) err << "Array " << node.asJsonPointer() << " has more than the maximum of " << maxItems << " items." << endl;
+					if (log)
+					{
+						ostringstream ostrm;
+						ostrm << "instance has more than the maximum of " << maxItems << " items";
+						errors._validationError(*this, node, ostrm.str());
+					}
+
 					fail = true;
 				}
 			}
@@ -2062,8 +2220,15 @@ namespace WJPP
 							if (lhs != rhs)
 								continue;
 
-							if (log) err << "Array element " << lhs.asJsonPointer() << " should be unique but matches " << rhs.asJsonPointer() << "." << endl;
+							if (log)
+							{
+								ostringstream ostrm;
+								ostrm << "array values fail 'unique' validation";
+								errors._validationError(*this, node, ostrm.str());
+							}
+
 							fail = true;
+							break;
 						}
 
 						if (lhs._e == rhs._e)
@@ -2078,7 +2243,7 @@ namespace WJPP
 
 
 
-	bool Node::_validateObject(Node& node, ostream& err, bool log)
+	bool Node::_validateObject(Node& node, Node& errors, bool log)
 	{
 		Node&			self = *this;
 		bool			fail = false;
@@ -2095,7 +2260,7 @@ namespace WJPP
 			Node					properties =						self["properties"];
 			Node					patternProperties =			self["patternProperties"];
 			Node					required =							self["required"];
-			Node					dependencies =					self["required"];
+			Node					dependencies =					self["dependencies"];
 			int						minProperties, maxProperties;
 
 			minProperties = (schemaProperty = self["minProperties"]) ? schemaProperty.getInt()    : 0;
@@ -2137,11 +2302,8 @@ namespace WJPP
 				{
 					Node schema = schemas[j];
 
-					if (!schema._validateInstance(item, err, log))
-					{
-						if (log) err << "Property " << node.asJsonPointer() << " failed validation against " << schema.asJsonPointer() << endl;
+					if (!schema._validateInstance(item, errors, log))
 						fail = true;
-					}
 				}
 			}
 
@@ -2191,7 +2353,22 @@ namespace WJPP
 
 						if (!members.empty())
 						{
-							if (log) err << "Property " << node.asJsonPointer() << " object doesn't meet properties, patternProperties and additionalProperties requirements." << endl;
+							if (log)
+							{
+								string								strMembers;
+								StringVect::iterator	itr;
+
+								for (itr = members.begin(); itr != members.end(); itr++)
+								{
+									if (itr != members.begin())
+										strMembers += ", ";
+
+									strMembers += *itr;
+								}
+
+								errors._validationError(*this, node, string("member(s) ") + strMembers + " fail 'properties', 'patternProperties' or 'additionalProperties' validation");
+							}
+
 							fail = true;
 						}
 					}
@@ -2210,7 +2387,13 @@ namespace WJPP
 
 					if (!node[str])
 					{
-						if (log) err << "Object " << node.asJsonPointer() << " does not have required property " << rqrd.getString() << "." << endl;
+						if (log)
+						{
+							ostringstream ostrm;
+							ostrm << "instance 'requires' member " << str;
+							errors._validationError(*this, node, ostrm.str());
+						}
+
 						fail = true;
 					}
 				}
@@ -2222,7 +2405,7 @@ namespace WJPP
 				for (iterator i = dependencies.begin(); i != dependencies.end(); i++)
 				{
 					Node 	dependency = *i;
-					Node 	dependent = node[string("'[") + dependency.getName() + "']"];
+					Node 	dependent = node[dependency.getName()];
 
 					if (dependent)
 					{
@@ -2234,18 +2417,21 @@ namespace WJPP
 								
 								if (!node.isMember(name.getString()))
 								{
-									if (log) err << "Object " << node.asJsonPointer() << " has property " << dependency.getName() << " which depends on missing property " << name.getString() << "." << endl;
+									if (log)
+									{
+										ostringstream ostrm;
+										ostrm << "instance property " << dependency.getName() << " depends on missing property " << name.getString();
+										errors._validationError(*this, node, ostrm.str());
+									}
+
 									fail = true;
 								}
 							}
 						}
 						else if (dependency.isObject())
 						{
-							if (!dependency._validateInstance(dependent, err, log))
-							{
-								if (log) err << "Object " << node.asJsonPointer() << " does not validate against dependency " << dependency.asJsonPointer() << endl;
+							if (!dependency._validateInstance(dependent, errors, log))
 								fail = true;
-							}
 						}
 					}
 				}
@@ -2255,7 +2441,13 @@ namespace WJPP
 			{
 				if (node.size() < (unsigned) minProperties)
 				{
-					if (log) err << "Object " << node.asJsonPointer() << " has less than the minimum of " << minProperties << " properties." << endl;
+					if (log)
+					{
+						ostringstream ostrm;
+						ostrm << "instance has less than the minimum of " << minProperties << " properties";
+						errors._validationError(*this, node, ostrm.str());
+					}
+
 					fail = true;
 				}
 			}
@@ -2264,7 +2456,13 @@ namespace WJPP
 			{
 				if (node.size() > (unsigned) maxProperties)
 				{
-					if (log) err << "Object " << node.asJsonPointer() << " has more than the maximum of " << maxProperties << " properties." << endl;
+					if (log)
+					{
+						ostringstream ostrm;
+						ostrm << "instance has more than the maximum of " << maxProperties << " properties";
+						errors._validationError(*this, node, ostrm.str());
+					}
+
 					fail = true;
 				}
 			}
@@ -2296,7 +2494,7 @@ namespace WJPP
 
 
 
-	bool Node::_validateType(Node& node, ostream& err, bool log)
+	bool Node::_validateType(Node& node, Node& errors, bool log)
 	{
 		Node			type = (*this)["type"];
 		bool			success = true;
@@ -2326,7 +2524,11 @@ namespace WJPP
 			}
 
 			if (!success && log)
-				cout << "Validator " << asJsonPointer() << " rejects " << node.getTypeAsString() << " of node " << node.asJsonPointer() << " because it expected type" << strTypes << endl;
+			{
+				ostringstream		ostrm;
+				ostrm << "expecting type" + strTypes + " but found type " << node.getTypeAsString(); 
+				errors._validationError(*this, node, ostrm.str());
+			}
 		}
 
 		return success;
@@ -2334,7 +2536,15 @@ namespace WJPP
 
 
 
-	WJElement Node::_beforeAdd(const string& name)
+	void Node::setName(const string& name)
+	{
+		if (_e)
+			WJERename(_e, name.c_str());
+	}
+
+
+
+	WJElement Node::_addChild(const string& name)
 	{
 		Cheat u;
 
@@ -2367,6 +2577,49 @@ namespace WJPP
 
 
 
+	void Node::_validationError(Node& schema, Node& instance, const std::string& strMessage)
+	{
+		if (!_e)
+			_e = Node::createArray()._e;
+
+		if (_e && _e->type == WJR_TYPE_ARRAY)
+		{
+			Node			error;
+			string		strJPSchema;
+			string		strJPInstance;
+			bool			add = true;
+
+			if (schema)
+				strJPSchema = schema.asJsonPointer();
+
+			if (instance)
+				strJPInstance = instance.asJsonPointer(true);
+
+			for (iterator i = begin(); i != end(); i++)
+			{
+				error = *i;
+
+				if (error["schema"].getString() == strJPSchema &&
+						error["instance"].getString() == strJPInstance &&
+						error["message"].getString() == strMessage)
+				{
+					add = false;
+					break;
+				}
+			}
+
+			if (add)
+			{
+				error = addObject("");
+				error.addString("schema", strJPSchema);
+				error.addString("instance", strJPInstance);
+				error.addString("message", strMessage);
+			}
+		}
+	}
+
+
+
 	/* static */
 	Node Node::createObject()
 	{
@@ -2385,7 +2638,7 @@ namespace WJPP
 
 	Node Node::addObject(const string& name)
 	{
-		WJElement e = _beforeAdd(name);
+		WJElement e = _addChild(name);
 		return WJEObject(e, NULL, WJE_MOD);
 	}
 
@@ -2393,7 +2646,7 @@ namespace WJPP
 
 	Node Node::addArray(const string& name)
 	{
-		WJElement e = _beforeAdd(name);
+		WJElement e = _addChild(name);
 		return WJEArray(e, NULL, WJE_MOD);
 	}
 
@@ -2401,7 +2654,7 @@ namespace WJPP
 
 	Node Node::addNull(const string& name)
 	{
-		WJElement e = _beforeAdd(name);
+		WJElement e = _addChild(name);
 		return WJENull(e, NULL, WJE_MOD);
 	}
 
@@ -2411,7 +2664,7 @@ namespace WJPP
 	{
 		Cheat u;
 		u.cp = value.c_str();
-		WJElement e = _beforeAdd(name);
+		WJElement e = _addChild(name);
 		WJEString(e, NULL, WJE_MOD, u.c);
 		return e;
 	}
@@ -2420,7 +2673,7 @@ namespace WJPP
 
 	Node Node::addBool(const string& name, bool value)
 	{
-		WJElement e = _beforeAdd(name);
+		WJElement e = _addChild(name);
 		WJEBool(e, NULL, WJE_MOD, value ? 1 : 0);
 		return e;
 	}
@@ -2429,7 +2682,7 @@ namespace WJPP
 
 	Node Node::addInt32(const string& name, int32 value)
 	{
-		WJElement e = _beforeAdd(name);
+		WJElement e = _addChild(name);
 		WJEInt32(e, NULL, WJE_MOD, value);
 		return e;
 	}
@@ -2438,7 +2691,7 @@ namespace WJPP
 
 	Node Node::addUInt32(const string& name, uint32 value)
 	{
-		WJElement e = _beforeAdd(name);
+		WJElement e = _addChild(name);
 		WJEUInt32(e, NULL, WJE_MOD, value);
 		return e;
 	}
@@ -2447,7 +2700,7 @@ namespace WJPP
 
 	Node Node::addInt64(const string& name, int64 value)
 	{
-		WJElement e = _beforeAdd(name);
+		WJElement e = _addChild(name);
 		WJEInt64(e, NULL, WJE_MOD, value);
 		return e;
 	}
@@ -2456,7 +2709,7 @@ namespace WJPP
 
 	Node Node::addUInt64(const string& name, uint64 value)
 	{
-		WJElement e = _beforeAdd(name);
+		WJElement e = _addChild(name);
 		WJEUInt64(e, NULL, WJE_MOD, value);
 		return e;
 	}
@@ -2465,7 +2718,7 @@ namespace WJPP
 
 	Node Node::addDouble(const string& name, double value)
 	{
-		WJElement e = _beforeAdd(name);
+		WJElement e = _addChild(name);
 		WJEDouble(e, NULL, WJE_MOD, value);
 		return e;
 	}
@@ -2626,8 +2879,8 @@ namespace WJPP
 
 			if (*schema != *m_metaSchema && *schema != *m_emptySchema)
 				schema.discard();
-
-			m_mapSchema.erase(m_mapSchema.begin());
+			else
+				m_mapSchema.erase(m_mapSchema.begin());
 		}
 
 		m_emptySchema.discard();
@@ -2648,11 +2901,10 @@ namespace WJPP
 
 				if (itr != m_mapSchema.end())
 				{
-					cout << "Cannot add schema " << schema.asJsonPointer() << " to cache because a schema with id " << strBaseURI << " already exists " << endl;
+					throw runtime_error(string("Cannot add schema ") + schema.asJsonPointer() + " to cache because a schema with id " + strBaseURI + " already exists ");
 					return;
 				}
 
-				cout << strBaseURI << "         ADD TO MAIN CACHE\n";
 				m_mapSchema[strBaseURI] = schema;
 			}
 		}
@@ -2673,7 +2925,6 @@ namespace WJPP
 				if (itr == m_mapSchema.end())
 					return;
 
-				cout << strBaseURI << "         REMOVE FROM MAIN CACHE\n";
 				m_mapSchema.erase(itr);
 			}
 		}
@@ -2690,7 +2941,7 @@ namespace WJPP
 
 
 
-	Node	Cache::loadSchema(const string& strURI)
+	Node Cache::loadSchema(const string& strURI, Node& errors)
 	{
 		NodeMapItr		itr = m_mapSchema.find(strURI);
 
@@ -2711,10 +2962,9 @@ namespace WJPP
 				schema = Node::parseJson(rsrce);
 
 				if (!schema)
-					throw runtime_error(string("failed to parse resource from URI ") + strURI);
+					throw runtime_error(string("failed parsing JSON resource from URI ") + strURI);
 
-				if (!m_metaSchema.validateInstance(schema, strURI))
-					throw runtime_error(string("failed to validated resource at URI ") + strURI +  " as a schema");
+				m_metaSchema.validateInstance(schema, errors, strURI);
 
 				return schema;
 			}
@@ -2731,10 +2981,10 @@ namespace WJPP
 
 
 
-	bool	Cache::loadSchema(Node& schema)
+	bool	Cache::loadSchema(Node& schema, Node& errors)
 	{
 		if (m_metaSchema && schema)
-			return m_metaSchema.validateInstance(schema);
+			return m_metaSchema.validateInstance(schema, errors);
 
 		return false;
 	}

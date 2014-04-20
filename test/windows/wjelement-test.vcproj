@@ -62,7 +62,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\..\wjelement\windows\Debug\wjelement.lib ..\..\windows\Debug\wjelement-cpp.lib D:\Development\Libs\curl-7.34.0\lib\debug-dll-ssl-dll-ssh2-dll-zlib-dll\libcurld_imp.lib ws2_32.lib wldap32.lib"
+				AdditionalDependencies="..\..\..\wjelement\windows\Debug\wjelement.lib ..\..\windows\Debug\wjelement-cpp.lib"
 				OutputFile="$(ProjectDir)$(ConfigurationName)\$(ProjectName).exe"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
@@ -96,7 +96,7 @@
 			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
-			CharacterSet="1"
+			CharacterSet="0"
 			WholeProgramOptimization="1"
 			>
 			<Tool
@@ -137,6 +137,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="..\..\..\wjelement\windows\Release\wjelement.lib ..\..\windows\\Release\wjelement-cpp.lib"
 				OutputFile="$(ProjectDir)$(ConfigurationName)\$(ProjectName).exe"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"
