@@ -932,7 +932,7 @@ namespace WJPP
 				const char*				pos = name;
 				char							c;
 
-				while (c = *pos++)
+				while ( (c = *pos++) )
 				{
 					if (c < '0' || c > '9' || idx > (UINT_MAX / 10))
 					{
@@ -1541,7 +1541,7 @@ namespace WJPP
 			if (!errors)
 				throw;
 
-			errors._validationError(*this, Node(), string("failed to resolve $ref, ") + e.what());
+			errors._validationError(*this, ref, string("failed to resolve $ref, ") + e.what());
 
 			return *this;
 		}

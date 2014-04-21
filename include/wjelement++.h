@@ -358,7 +358,7 @@ namespace WJPP
 		//! method checks if this has a $ref member and if so loads the referenced schema anbd passes the message on to it, otherwise returns this
 		Node										_resolveRef(NodeVect& refs, Node& errors);
 		//! Main interface to _resolveRef(NodeVect& refs)
-		Node										_resolveRef(Node& errors = Node());
+		Node										_resolveRef(Node& errors);
 
 		//! Sent if this is an inlined schema so that it can register itself with the root schemas map fo inlined schemas
 		void										_registerInlineSchema();
@@ -385,8 +385,10 @@ namespace WJPP
 		WJElement								_addChild(const std::string& name);
 
 	public:
-		//! Default ctor
-		Node(WJElement e = NULL) : _e(e) {}
+    //! Create a node from a WJElement
+    Node() : _e(NULL) {}
+		//! Create a node from a WJElement
+		Node(WJElement e) : _e(e) {}
 		//! copy c'tor
 		Node(const Node& j) : _e(j._e) {}
 
