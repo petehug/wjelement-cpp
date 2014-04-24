@@ -24,8 +24,8 @@ branch of wjelement:
  git clone -b wjelement++ https://github.com/petehug/wjelement.git
  
 Further reading:
- Find a short description here: https://github.com/petehug/wjelement-cpp/wiki
- Code documentation: http://www.d3.org.nz/wjelement-cpp/
+- Example: https://github.com/petehug/wjelement-cpp/wiki
+- Documentation: http://www.d3.org.nz/wjelement-cpp/
 
 Notes: 
 
