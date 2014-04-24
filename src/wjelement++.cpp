@@ -946,6 +946,8 @@ namespace WJPP
 
 				if (numeric)
 					return operator[](idx);
+
+				c = NULL;
 			}
 			else
 			{
@@ -1196,6 +1198,50 @@ namespace WJPP
 					os << "unknown";
 					break;
 			}
+		}
+
+		return os;
+	}
+
+
+
+	ostream & Node::to_stream(ostream & os)
+	{
+		if (_e)
+		{
+			switch (_e->type)
+			{
+				case WJR_TYPE_ARRAY:
+					os << "[array]";
+					break;
+				case WJR_TYPE_OBJECT:
+					os << "[object]";
+					break;
+				case WJR_TYPE_STRING:
+					os << getString();
+					break;
+				case WJR_TYPE_INTEGER:
+					os << getInt();
+					break;
+				case WJR_TYPE_NUMBER:
+					os << getNum();
+					break;
+				case WJR_TYPE_BOOL:
+				case WJR_TYPE_TRUE:
+				case WJR_TYPE_FALSE:
+					os << (getBool() ? "true" : "false");
+					break;
+				case WJR_TYPE_NULL:
+					os << "null";
+					break;
+				case WJR_TYPE_UNKNOWN:
+					os << "[unknown]";
+					break;
+			}
+		}
+		else
+		{
+			os << "[undefined]";
 		}
 
 		return os;
@@ -2871,6 +2917,15 @@ namespace WJPP
 					Cache Implementation
 	*******************************************************************/
 		
+	/* static */
+	Cache& Cache::GetCache(SchemaLoaderFunc fnLoader)
+	{
+		static Cache	g_Cache(fnLoader);
+		return g_Cache;
+	}
+
+
+
 	Cache::~Cache()
 	{
 		while (!m_mapSchema.empty())
@@ -2932,7 +2987,7 @@ namespace WJPP
 
 
 
-	void Cache::initialise()
+	void Cache::_initialize()
 	{
 		m_metaSchema  = Node::_loadMetaSchema(this);
 		m_emptySchema = Node::_createEmptySchema(this);

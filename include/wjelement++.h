@@ -570,6 +570,14 @@ namespace WJPP
 		*/
 		std::ostream &					dump(std::ostream & os, int indent = 0);
 
+		//! to_stream outputs the value of this to the stream
+		/*! @param os The output stream where this should be written to
+
+				\note This method writes just values, no labels or JSON punctuation.
+				If this is an array or an object, it will write [array] or [object]. 
+		*/
+		std::ostream &					to_stream(std::ostream & os);
+
 		//! deletes this' and all its depended WJElements (operator!() will return true after this call;
 		/*! \note This method deletes all memory resources used by this and and all its dependents
 				The method should be called on root Nodes (it automatically discards all direct and indirect
@@ -686,7 +694,7 @@ namespace WJPP
 	//! See Cache::loadSchema for an explanation/requirement of function of this type
 	typedef std::string (*SchemaLoaderFunc)(const std::string& strURI);
 
-	//! The schema cache keeps schemas 
+	//! The schema cache singleton class stores schema info globally
 	class Cache
 	{
 		friend class Node;
@@ -721,11 +729,25 @@ namespace WJPP
 		void							_onSchemaCreated(Node& schema, URIPtr pURI);
 		void							_onSchemaDeleted(Node& schema, URIPtr pURI);
 
-	public:
-		Cache(SchemaLoaderFunc fnLoader = NULL) : m_fnLoader(fnLoader) { initialise(); }
+		Cache(SchemaLoaderFunc fnLoader = NULL) : m_fnLoader(fnLoader) { _initialize(); }
 		~Cache();
 
-		void							initialise();
+		void							_initialize();
+
+	public:
+
+		//! Singleton accessor
+		/*! @param fnLoader This optional parameter, if provided, must be a pointer to a function that 
+		                    takes a string representing a URI as the only parameter, loads the referenced
+												resource and returns a string that contains the data from that resource.
+
+				\note It is HIGHLY recommended that the first time you call this method you provide a fnLoader.
+				If you call loadSchema(strURI) and the schema doesn't exist, the Cache will delegate the loading
+				of the resource to fnLoader. If no loader is specified, only schemas already cached can be
+				accessed. 
+				Beware that fnLoader values provided in subsequent calls to GetCache are ignored.
+		*/
+		static Cache&			GetCache(SchemaLoaderFunc fnLoader = NULL);
 
 		//! Returns the Node that specifies the schema requested in the URI
 		/*! The method first looks in its own cache and returns what the schema when it finds it
@@ -750,6 +772,15 @@ namespace WJPP
 		return *lhs < *rhs;
 	}
 
+
 } /* namespace WJPP */
+
+
+//! Stream a Node to an std::ostream
+inline std::ostream & operator << (std::ostream & strmOut, WJPP::Node aNode)
+{
+	return aNode.to_stream(strmOut);
+}
+
 
 #endif /* _wjelementcpp_h_ */

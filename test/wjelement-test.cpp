@@ -58,7 +58,7 @@ int main(int argc, char **argv)
 		"uniqueItems"
 	};
 
-	Cache											cache;
+	Cache&										cache = WJPP::Cache::GetCache();
 	string										fileName, testPath = string(".." FILE_PATH_SEPARATOR ".." FILE_PATH_SEPARATOR "draft4-tests" FILE_PATH_SEPARATOR);
 	ostringstream							ostrm;
 	NodeVect									vectTests;

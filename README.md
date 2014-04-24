@@ -23,6 +23,10 @@ branch of wjelement:
 
  git clone -b wjelement++ https://github.com/petehug/wjelement.git
  
+Further reading:
+ Find a short description here: https://github.com/petehug/wjelement-cpp/wiki
+ Code documentation: http://www.d3.org.nz/wjelement-cpp/
+
 Notes: 
 
 - currently I'm building this under windows using VC9 but will add support for Linux shortly
