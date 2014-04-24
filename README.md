@@ -1,39 +1,29 @@
-Wjelement-cpp
+WJElement-cpp
 =============
 
 WJElement-cpp - Lightweight C++ wrapper for WJElement with JSON Schema support
 
-WJElement++ provides a simple, lightweight wrapper around the excellent WJElement
-library. The wrapper supports JSON Schema draft-04.
+WJElement-cpp is based on top of the C library WJElement. The library is fast and efficient, but the C interface is neither easy to read nor to write. WJElement-cpp changes all that by implementing a WJPP::Node class which simply wraps a WJElement (a pointer to a WJElementPublic struct). You can pass a WJPP::Node object whereever a WJElement is expected and vs. They are interchangable.
 
-While WJElement is fast and memory-efficiency, this C++ wrapper makes it
-far more convenient to use and and the code is easier to understand and 
-manage.
+WJElement-cpp also supports JSON Schema draft-04. The library maintains a schema cache which, on first use, loads the draft-04 meta schema. You can subsequently use the meta schema to load, validate and cache draft-04 schema. You can then use these schema to validate JSON documents.
 
-However, the wrapper is only a by-product of the real reason why this
-library sprung to life. I was after a JSON Schema library for C or C++
-that would allow me to deal with things such as binding validators
-with elements, identifying elements as schemas, parsing the meta schema
-and building schema and document stores. At the time of forking WJElement, 
-its built in support for schema only supported validation and was based on 
-JSON Schema draft-03.
+One of the unique features of this library is that it ties schematic components to instance data. This means that a node will have access to the schema components that are used for its validation. 
 
-To use this library, you will need to build and link with the wjelement++
-branch of wjelement:
-
- git clone -b wjelement++ https://github.com/petehug/wjelement.git
- 
 Further reading:
 - Example: https://github.com/petehug/wjelement-cpp/wiki
 - Documentation: http://www.d3.org.nz/wjelement-cpp/
 
-Notes: 
+Dependencies: 
+- WJElement (wjelement++ branch). This library requires that you use the wjelement++ branch of WJElement. You can get it from here: https://github.com/petehug/wjelement/tree/wjelement++. The library must be built by specifying the WJE_DISTINGUISH_INTEGER_TYPE compiler directive.
+- Boost.Regex (I've been using 1.42.0). You can get the library from here: http://www.boost.org.
 
-- currently I'm building this under windows using VC9 but will add support for Linux shortly
-- the library currently uses boost regex but is expected to alos use boost threads in the future
-- you find a test program in the test folder and the VC9 project file under windows
-  this test program will run all draft4 compliance tests but it does require these additional
-	libraries: libcurl, libssh2 and zlib
+Notes:
+- In my view a major issue is that the current WJElement version does no strict JSON parsing. Instead of rejecting JSON that isn't valid, it simply omits incorrect "portions". However, I am aware that efforts are underway to add a strict reader to the library that reports errors and stops parsing.
+- The library is not thread-safe but this item is high on the road-map
+- JSON Schema issues: 
+-- I feel there are major issues in JSON Schema draft-04 spec WRT the schema's "id" propperty. It is likely that you face some issues with this library if you rely on "id".
+-- The library does not honor "format", but this item is on the road-map
+-- The library does not implement JSON Hyper-Schema
 
 Peter Hug <pete@kapiti.co.nz>  - author of Wjelement-cpp
 
