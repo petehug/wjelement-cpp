@@ -772,12 +772,12 @@ namespace WJPP
 			reader = WJROpenMemDocument((void*) json.c_str(), NULL, 0);
 
 			if (!reader)
-				throw runtime_error("could not create reader");
+				throw runtime_error("reader could not be created, parsing JSON failed");
 
 			node = WJEOpenDocument(reader, NULL, NULL, NULL);
 
 			if (!node)
-				throw runtime_error("could not parse json");
+				throw runtime_error("parsing JSON failed");
 
 			WJRCloseDocument(reader);
 
@@ -858,7 +858,7 @@ namespace WJPP
 			}
 		}
 
-		return "";
+		return "__nil__";
 	}
 
 
@@ -1018,7 +1018,7 @@ namespace WJPP
 			throw runtime_error("detach called on root");
 
 		if (isSchema())
-			throw runtime_error("Node::detach(): can't detach schema nodes.");
+			throw runtime_error("can't detach schema nodes.");
 
 		// rewire the wjelement
 		WJEDetach(_e);
@@ -2774,7 +2774,7 @@ namespace WJPP
 	bool Node::getBool()											
 	{ 
 		if (!isBoolean())
-			throw std::runtime_error("node doesn't understand getBool()");
+			throw std::runtime_error(asJsonPointer() + " doesn't understand getBool()");
 		
 		return WJEBool(_e, (char*) ".", WJE_GET, NULL) == 1 ? true : false; 
 	}
@@ -2784,7 +2784,7 @@ namespace WJPP
 	int32 Node::getInt32()
 	{ 
 		if (!isInteger())
-			throw std::runtime_error("node doesn't understand getInt32()");
+			throw std::runtime_error(asJsonPointer() + " doesn't understand getInt32()");
 		
 		return WJEInt32(_e, (char*) ".", WJE_GET, NULL); 
 	}
@@ -2794,7 +2794,7 @@ namespace WJPP
 	uint32 Node::getUInt32()
 	{ 
 		if (!isInteger())
-			throw std::runtime_error("node doesn't understand getUInt32()");
+			throw std::runtime_error(asJsonPointer() + " doesn't understand getUInt32()");
 		
 		return WJEUInt32(_e, (char*) ".", WJE_GET, NULL); 
 	}
@@ -2804,7 +2804,7 @@ namespace WJPP
 	int64 Node::getInt64()
 	{ 
 		if (!isInteger())
-			throw std::runtime_error("node doesn't understand getInt64()");
+			throw std::runtime_error(asJsonPointer() + " doesn't understand getInt64()");
 		
 		return WJEInt64(_e, (char*) ".", WJE_GET, NULL); 
 	}
@@ -2814,7 +2814,7 @@ namespace WJPP
 	uint64 Node::getUInt64()
 	{ 
 		if (!isInteger())
-			throw std::runtime_error("node doesn't understand getUInt64()");
+			throw std::runtime_error(asJsonPointer() + " doesn't understand getUInt64()");
 		
 		return WJEUInt64(_e, (char*) ".", WJE_GET, NULL); 
 	}
@@ -2824,7 +2824,7 @@ namespace WJPP
 	double Node::getNum()
 	{ 
 		if (!isNumber() && !isInteger())
-			throw std::runtime_error("node doesn't understand getNum()");
+			throw std::runtime_error(asJsonPointer() + " doesn't understand getNum()");
 
 		if (isInteger())
 			return (double) WJEInt64(_e, (char*) ".", WJE_GET, NULL);
@@ -2837,7 +2837,7 @@ namespace WJPP
 	string Node::getString() 
 	{ 
 		if (!isString())
-			throw std::runtime_error("node doesn't understand getString()");
+			throw std::runtime_error(asJsonPointer() + " doesn't understand getString()");
 		
 		return WJEString(_e, (char*) ".", WJE_GET, NULL); 
 	}
@@ -2847,7 +2847,7 @@ namespace WJPP
 	void Node::setNull()
 	{
 		if (!_e || !WJENull(_e, NULL, WJE_MOD))
-			throw runtime_error("failed to set null value");
+			throw runtime_error(asJsonPointer() + " failed to set null value");
 	}
 
 
@@ -2857,7 +2857,7 @@ namespace WJPP
 		Cheat u;
 		u.cp = value.c_str();
 		if (!_e || !WJEString(_e, NULL, WJE_MOD, u.c))
-			throw runtime_error("failed to set string value");
+			throw runtime_error(asJsonPointer() + " failed to set string value");
 	}
 
 
@@ -2865,7 +2865,7 @@ namespace WJPP
 	void Node::setBool(bool value)
 	{
 		if (!_e || WJEBool(_e, NULL, WJE_MOD, value ? 1 : 0) != (value ? 1 : 0))
-			throw runtime_error("failed to set bool value");
+			throw runtime_error(asJsonPointer() + " failed to set bool value");
 	}
 
 
@@ -2873,7 +2873,7 @@ namespace WJPP
 	void Node::setInt32(int32 value)
 	{
 		if (!_e || WJEInt32(_e, NULL, WJE_MOD, value) != value)
-			throw runtime_error("failed to set int32 value");
+			throw runtime_error(asJsonPointer() + " failed to set int32 value");
 	}
 
 
@@ -2881,7 +2881,7 @@ namespace WJPP
 	void Node::setUInt32(uint32 value)
 	{
 		if (!_e || WJEUInt32(_e, NULL, WJE_MOD, value) != value)
-			throw runtime_error("failed to set uint32 value");
+			throw runtime_error(asJsonPointer() + " failed to set uint32 value");
 	}
 
 
@@ -2889,7 +2889,7 @@ namespace WJPP
 	void Node::setInt64(int64 value)
 	{
 		if (!_e || WJEInt64(_e, NULL, WJE_MOD, value) != value)
-			throw runtime_error("failed to set int64 value");
+			throw runtime_error(asJsonPointer() + " failed to set int64 value");
 	}
 
 
@@ -2897,7 +2897,7 @@ namespace WJPP
 	void Node::setUInt64(uint64 value)
 	{
 		if (!_e || WJEUInt64(_e, NULL, WJE_MOD, value) != value)
-			throw runtime_error("failed to set uint64 value");
+			throw runtime_error(asJsonPointer() + " failed to set uint64 value");
 	}
 
 
@@ -2905,7 +2905,7 @@ namespace WJPP
 	void Node::setDouble(double value)
 	{
 		if (!_e || WJEDouble(_e, NULL, WJE_MOD, value) != value)
-			throw runtime_error("failed to set double value");
+			throw runtime_error(asJsonPointer() + " failed to set double value");
 	}
 
 

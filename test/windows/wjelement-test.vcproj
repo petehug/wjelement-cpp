@@ -42,7 +42,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../../wjelement/include;&quot;../../include&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;USE_APAL_JSON_SCHEMA;WJE_DISTINGUISH_INTEGER_TYPE"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;WJE_DISTINGUISH_INTEGER_TYPE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -62,7 +62,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\..\wjelement\windows\Debug\wjelement.lib ..\..\windows\Debug\wjelement-cpp.lib"
+				AdditionalDependencies="wjelementd.lib wjelement-cppd.lib"
 				OutputFile="$(ProjectDir)$(ConfigurationName)\$(ProjectName).exe"
 				LinkIncremental="2"
 				GenerateDebugInformation="true"
@@ -137,7 +137,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\..\wjelement\windows\Release\wjelement.lib ..\..\windows\\Release\wjelement-cpp.lib"
+				AdditionalDependencies="wjelement.lib wjelement-cpp.lib"
 				OutputFile="$(ProjectDir)$(ConfigurationName)\$(ProjectName).exe"
 				LinkIncremental="1"
 				GenerateDebugInformation="true"

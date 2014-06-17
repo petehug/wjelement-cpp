@@ -186,6 +186,7 @@ namespace WJPP
 	class Node
 	{
 		friend class	Cache;
+		friend class	ManagedNode;
 		friend struct Node_cmp;
 
 	protected:
@@ -566,7 +567,7 @@ namespace WJPP
 		/*! @param os The output stream where this should be written to
 				@param indent The output will be indented by indent * 2 spaces
 
-				The message is recursively passed to cildren each time incrementing indent by 1
+				The message is recursively passed to children each time incrementing indent by 1
 		*/
 		std::ostream &					dump(std::ostream & os, int indent = 0);
 
@@ -772,6 +773,26 @@ namespace WJPP
 		return *lhs < *rhs;
 	}
 
+
+	//! Managed nodes are discarded when the object is distroyed
+	class ManagedNode : public Node
+	{
+	public:
+    //! Create a node from a WJElement
+    ManagedNode() {}
+		//! Create a node from a WJElement
+		ManagedNode(WJElement e) : Node(e) {}
+		//! copy c'tor
+		ManagedNode(const Node& j) : Node(j) {}
+
+		//! dtor
+		~ManagedNode() { discard(); }
+
+		// assignemnt
+		ManagedNode&	operator=(Node& n)				{ _e = n._e; return *this; }
+		ManagedNode&	operator=(ManagedNode& n) { _e = n._e; return *this; }
+		ManagedNode&	operator=(WJElement e)		{ _e = e; return *this; }
+	};
 
 } /* namespace WJPP */
 
