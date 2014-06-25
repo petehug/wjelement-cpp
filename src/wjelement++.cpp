@@ -922,7 +922,7 @@ namespace WJPP
 	{
 		WJElement c = _e ? _e->child : NULL;
 
-		if (c)
+		if (c && name)
 		{
 			if (isArray())
 			{
@@ -953,7 +953,7 @@ namespace WJPP
 			{
 				while (c)
 				{
-					if (strcmp(c->name, name) == 0)
+					if (c->name && strcmp(c->name, name) == 0)
 						break;
 
 					c = c->next;
@@ -2067,7 +2067,7 @@ namespace WJPP
 				if (log)
 				{
 					ostringstream ostrm;
-					ostrm << "instance is longer than " << minLength;
+					ostrm << "instance is longer than " << maxLength;
 					errors._validationError(*this, node, ostrm.str());
 				}
 
@@ -2998,7 +2998,7 @@ namespace WJPP
 
 	Node Cache::loadSchema(const string& strURI, Node& errors)
 	{
-		NodeMapItr		itr = m_mapSchema.find(strURI);
+		NodeMapItr		itr = m_mapSchema.find(URI(strURI).getBaseURI());
 
 		if (itr != m_mapSchema.end())
 			return itr->second;
