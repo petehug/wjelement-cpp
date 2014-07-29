@@ -3,8 +3,8 @@ INCDIR=include
 SRCDIR=src
 OUTDIR=unix/release
 MAKEDIR=@mkdir -p $(@D)
-#CFLAGS=-c -Wall -O3 -DWJE_DISTINGUISH_INTEGER_TYPE -I$(INCDIR) -I../wjelement/include -I../boost_1_42_0
-CFLAGS=-c -Wall -g -DDEBUG -DWJE_DISTINGUISH_INTEGER_TYPE -I$(INCDIR) -I../wjelement/include -I../boost_1_42_0
+#CFLAGS=-c -Wall -O3 -I$(INCDIR) -I../wjelement/include -I../boost_1_42_0
+CFLAGS=-c -Wall -g -DDEBUG -I$(INCDIR) -I../wjelement/include -I../boost_1_42_0
 
 all: $(OUTDIR)/libwjelement++.a
 

@@ -1,6 +1,6 @@
 project(wjelement-test)
 cmake_minimum_required(VERSION 2.6)
-       
+
 if(CMAKE_BOOST_INCLUDE)
     include_directories(${CMAKE_BOOST_INCLUDE})
 else(CMAKE_BOOST_INCLUDE)
@@ -24,10 +24,8 @@ if(CMAKE_WJELEMENT_LIB)
 else(CMAKE_WJELEMENT_LIB)
     message(FATAL_ERROR,"You have not  defined CMAKE_WJELEMENT_LIB")
 endif(CMAKE_WJELEMENT_LIB)
- 
-add_definitions(-DWJE_DISTINGUISH_INTEGER_TYPE)
 
-add_executable(wjelement-test wjelement-test.cpp Exception.cpp) 
-target_link_libraries(wjelement-test 
-wjelement++ 
+add_executable(wjelement-test wjelement-test.cpp Exception.cpp)
+target_link_libraries(wjelement-test
+wjelement++
 )

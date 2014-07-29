@@ -254,7 +254,7 @@ namespace WJPP
 	/*******************************************************************
 					URI Implementation
 	*******************************************************************/
-	/* static */ 
+	/* static */
 	string URI::decodeJsonPointer(const string & strPtr)
 	{
 		string		strOut;
@@ -310,7 +310,7 @@ namespace WJPP
 
 
 
-	/* static */ 
+	/* static */
 	string URI::encodeJsonPointer(const string & strPtr)
 	{
 		string		strOut;
@@ -352,7 +352,7 @@ namespace WJPP
 
 
 
-	/* static */ 
+	/* static */
 	string& URI::getMode()
 	{
 		if (m_mode.empty())
@@ -761,7 +761,7 @@ namespace WJPP
 
 
 
-	/* static */ 
+	/* static */
 	Node Node::parseJson(const std::string & json)
 	{
 		WJReader		reader = NULL;
@@ -997,7 +997,7 @@ namespace WJPP
 
 
 
-	Node Node::getRoot() 
+	Node Node::getRoot()
 	{
 		WJElement p = _e;
 
@@ -1009,7 +1009,7 @@ namespace WJPP
 
 
 
-	void Node::detach() 
+	void Node::detach()
 	{
 		if (!_e)
 			throw runtime_error("NULL.detach called");
@@ -1022,22 +1022,7 @@ namespace WJPP
 
 		// rewire the wjelement
 		WJEDetach(_e);
-/*
-		_e->parent->count++;
 
-		if (_e->parent->child == _e)
-			_e->parent->child = _e->next;
-		
-		if (_e->prev)
-			_e->prev->next = _e->next;
-
-		if (_e->next)
-			_e->next->prev = _e->prev;
-
-		_e->parent = NULL;
-		_e->prev = NULL;
-		_e->next = NULL;
-*/
 		// discard all validators
 		_discardValidators();
 	}
@@ -1060,61 +1045,66 @@ namespace WJPP
 
 
 
-	bool Node::operator==(Node& rhs)
+	int Node::compare(Node& rhs)
 	{
-		if (_e && rhs._e)
+		int	iCmp;
+
+		if (!_e && !rhs._e)
+			return 0;
+
+		if (!_e && rhs._e)
+			return -1;
+
+		if (_e && !rhs._e)
+			return 1;
+
+		if (_e->type != rhs._e->type)
+			throw std::runtime_error("Node::compare: nodes to compare must have the same type");
+
+		switch(_e->type)
 		{
-			if (_e->type == rhs._e->type)
+			case WJR_TYPE_OBJECT:
+			case WJR_TYPE_ARRAY:
 			{
-				switch(_e->type)
+				iterator	il, ir;
+
+				for (il = begin(), ir = rhs.begin(); il != end() && ir != rhs.end(); il++, ir++)
 				{
-					case WJR_TYPE_OBJECT:
-					case WJR_TYPE_ARRAY:
-					{
-						iterator	il, ir;
-						
-						for (il = begin(), ir = rhs.begin(); il != end() && ir != rhs.end(); il++, ir++)
-						{
-							Node l = *il, r = *ir;
+					Node l = *il, r = *ir;
 
-							if (l != r)
-								return false;
-						}
-
-						if (il != end() || ir != rhs.end())
-							return false;
-
-						return true;
-					}
-
-					case WJR_TYPE_STRING:
-						return getString() == rhs.getString();
-
-					case WJR_TYPE_INTEGER:
-						return getInt() == rhs.getInt();
-
-					case WJR_TYPE_NUMBER:
-						return getNum() == rhs.getNum();
-
-					case WJR_TYPE_BOOL:
-					case WJR_TYPE_TRUE:
-					case WJR_TYPE_FALSE:
-						return getBool() == rhs.getBool();
-
-					case WJR_TYPE_NULL:
-					case WJR_TYPE_UNKNOWN:
-						return true;
+					if ((iCmp = l.compare(r)) != 0)
+						return iCmp;
 				}
-			}
-		}
-		else
-		{
-			if (!_e && !rhs._e)
+
+				if (il != end())
+					return -1;
+				if (ir != rhs.end())
+					return 1;
+
 				return true;
+			}
+
+			case WJR_TYPE_STRING:
+				return strcmp(getChar(), rhs.getChar());
+
+			case WJR_TYPE_INTEGER:
+				return getInt() < rhs.getInt() ? -1 : (getInt() > rhs.getInt() ? 1 : 0);
+
+			case WJR_TYPE_NUMBER:
+				return getNum() < rhs.getNum() ? -1 : (getNum() > rhs.getNum() ? 1 : 0);
+
+			case WJR_TYPE_BOOL:
+			case WJR_TYPE_TRUE:
+			case WJR_TYPE_FALSE:
+				return getBool() == rhs.getBool() ? 0 : (getBool() ? 1 : -1);
+
+			case WJR_TYPE_NULL:
+			case WJR_TYPE_UNKNOWN:
+				return 0;
 		}
 
-		return false;
-	} 
+		return 0;
+	}
 
 
 
@@ -1485,10 +1475,10 @@ namespace WJPP
 
 	void Node::_validateMetaSchemaMember(CachePtr pCache)
 	{
-		if (!_e) 
+		if (!_e)
 			throw runtime_error("_validateMetaSchemaMember message sent to nil node");
 
-		if (!_e->parent && !isObject()) 
+		if (!_e->parent && !isObject())
 			throw runtime_error("The root element of the meta schema must be an object");
 
 		switch (_e->type)
@@ -2554,7 +2544,7 @@ namespace WJPP
 				strT = type.getString();
 				strTypes = " " + strT;
 				success = _validateSingleType(node, strT);
-			} 
+			}
 			else if (isArray())
 			{
 				strTypes = " one of";
@@ -2572,7 +2562,7 @@ namespace WJPP
 			if (!success && log)
 			{
 				ostringstream		ostrm;
-				ostrm << "expecting type" + strTypes + " but found type " << node.getTypeAsString(); 
+				ostrm << "expecting type" + strTypes + " but found type " << node.getTypeAsString();
 				errors._validationError(*this, node, ostrm.str());
 			}
 		}
@@ -2772,74 +2762,84 @@ namespace WJPP
 
 
 	bool Node::getBool()											
-	{ 
+	{
 		if (!isBoolean())
 			throw std::runtime_error(asJsonPointer() + " doesn't understand getBool()");
 		
-		return WJEBool(_e, (char*) ".", WJE_GET, NULL) == 1 ? true : false; 
+		return WJEBool(_e, (char*) ".", WJE_GET, NULL) == 1 ? true : false;
 	}
 
 
 
 	int32 Node::getInt32()
-	{ 
+	{
 		if (!isInteger())
 			throw std::runtime_error(asJsonPointer() + " doesn't understand getInt32()");
 		
-		return WJEInt32(_e, (char*) ".", WJE_GET, NULL); 
+		return WJEInt32(_e, (char*) ".", WJE_GET, NULL);
 	}
 
 
 
 	uint32 Node::getUInt32()
-	{ 
+	{
 		if (!isInteger())
 			throw std::runtime_error(asJsonPointer() + " doesn't understand getUInt32()");
 		
-		return WJEUInt32(_e, (char*) ".", WJE_GET, NULL); 
+		return WJEUInt32(_e, (char*) ".", WJE_GET, NULL);
 	}
 
 
 
 	int64 Node::getInt64()
-	{ 
+	{
 		if (!isInteger())
 			throw std::runtime_error(asJsonPointer() + " doesn't understand getInt64()");
 		
-		return WJEInt64(_e, (char*) ".", WJE_GET, NULL); 
+		return WJEInt64(_e, (char*) ".", WJE_GET, NULL);
 	}
 
 
 
 	uint64 Node::getUInt64()
-	{ 
+	{
 		if (!isInteger())
 			throw std::runtime_error(asJsonPointer() + " doesn't understand getUInt64()");
 		
-		return WJEUInt64(_e, (char*) ".", WJE_GET, NULL); 
+		return WJEUInt64(_e, (char*) ".", WJE_GET, NULL);
 	}
 
 
 
 	double Node::getNum()
-	{ 
+	{
 		if (!isNumber() && !isInteger())
 			throw std::runtime_error(asJsonPointer() + " doesn't understand getNum()");
 
 		if (isInteger())
 			return (double) WJEInt64(_e, (char*) ".", WJE_GET, NULL);
 
-		return WJEDouble(_e, (char*) ".", WJE_GET, NULL); 
+		return WJEDouble(_e, (char*) ".", WJE_GET, NULL);
 	}
 
 
 
-	string Node::getString() 
-	{ 
+	string Node::getString()
+	{
 		if (!isString())
 			throw std::runtime_error(asJsonPointer() + " doesn't understand getString()");
 		
-		return WJEString(_e, (char*) ".", WJE_GET, NULL); 
+		return WJEString(_e, (char*) ".", WJE_GET, NULL);
+	}
+
+
+
+	char* Node::getChar()
+	{
+		if (!isString())
+			throw std::runtime_error(asJsonPointer() + " doesn't understand getChar()");
+
+		return WJEString(_e, (char*) ".", WJE_GET, NULL);
 	}
 
 

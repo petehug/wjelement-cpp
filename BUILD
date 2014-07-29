@@ -76,8 +76,6 @@ CMAKE_INSTALL_PREFIX:
 It refers to the path where header and library files related to wjelement-cpp will be installed.If its not mentioned on the command prompt,it will use either the old path mentioned in the previous build or uses default path(e.g. /usr/local)
 CMAKE_VERBOSE_MAKEFILE:User can set cache variable CMAKE_VERBOSE_MAKEFILE=1 to enable verbosity and all the commands will be echoed to the console during the make.By Default,CMAKE_VERBOSE_MAKEFILE is disable/off.
 
-Note:"The pre-compiler directive WJE_DISTINGUISH_INTEGER_TYPE shall be mandatory defined for building wjelement++ library and test application. Irrespective whether user define pre-compiler directive WJE_DISTINGUISH_INTEGER_TYPE on the command line along with cmake or not ,wjelement++ build rules will ensure WJE_DISTINGUISH_INTEGER_TYPE is always define."
-
 =================================
 Brief explanation about cmake -i:
 =================================

@@ -3,7 +3,7 @@
 
 WJElement-cpp provides a simple, lightweight wrapper around the excellent WJElement library. The wrapper supports JSON Schema draft-04.
 
-While WJElement is fast and memory-efficiency, this C++ wrapper makes it far more convenient to use and and the code is easier to understand and manage.
+While WJElement is fast and memory-efficient, this C++ wrapper simply adds a level of indirection which makes wjelement far more convenient to use and the code easier to understand and manage with virtually no impact on performance.
 
 However, the wrapper is only a by-product of the real reason why this library sprung to life. I was after a JSON Schema library for C or C++ that would allow me to deal with things such as binding validators with elements, identifying elements as schemas, parsing the meta schema and building schema and document stores. At the time of forking WJElement, its built in support for schema only supported validation and was based on JSON Schema draft-03.
 
@@ -16,12 +16,31 @@ git clone -b wjelement++ https://github.com/petehug/wjelement.git
 - The library currently uses boost regex but is expected to also use boost threads in the future.
 - You'll find a test program in the test folder and the VC9 project file under windows, This test program will run all draft4 compliance tests.
 
-Peter Hug pete@kapiti.co.nz - author of Wjelement-cpp
+Peter Hug peter.hug@warehouseoptimization.com - author of Wjelement-cpp
 
 Special thanks goes to Micah N Gorrell for his excellent wjelement library!
 */
 #ifndef _wjelementcpp_h_
 #define _wjelementcpp_h_
+
+//============================= I M P O R T A N T =======================================
+/*
+	wjelement++ is built on top of the C library WJElement. At the time of this writing,
+	wjelement did not distinguish between number and integer JSON types, but this is vital
+	for proper JSON Schema Draft 04 implementation support.
+	For this reason I created the new WJElement branch wjelement++ and added support for
+	integer JSON types. WJElement-cpp requires that you build and link with this branch
+	of WJElement and that when building WJElement the precompiler directive
+	WJE_DISTINGUISH_INTEGER_TYPE is defined.
+
+	You can get my branch of the wjelement library from here:
+
+		https://github.com/petehug/wjelement
+
+	The included makfiles ensure the library is built correctly for use with wjelement++.
+*/
+#define WJE_DISTINGUISH_INTEGER_TYPE
+//=======================================================================================
 
 #include <wjelement.h>
 #include <iostream>
@@ -84,7 +103,7 @@ namespace WJPP
 	*******************************************************************************************************/
 
 	//! URI class can be used to store full or paretially defined URI's based on other URI's (protocol, host, path, query-string(s) and JsonPointer(s))
-	/*! The URI class works just like page internal URL's behave in a web browser. 
+	/*! The URI class works just like page internal URL's behave in a web browser.
 	
 			The page itself has a URL which is considered the base URL. Other URL's can be fully qualified (i.e. not based on the pages URL)
 			or relative to the pages URL:
@@ -114,11 +133,11 @@ namespace WJPP
 		URIPtr				m_pBaseURI;					//!< The base URI - will be used to resolve full URI if this is a partial URI
 		std::string		m_mode;							//!< The mode (aka "scheme") (e.g. http, ftp, ssh, https, etc.)
 		std::string		m_host;							//!< The host (aka "authority") details (e.g. mysite.com, mysite.com:8080, user:pwd@mysite.com:8080, etc.)
-		std::string		m_path;							//!< The path (e.g. foo, /foo, ../bar, foo/bar, etc). If the leading slash is omitted, this is a relative path and the full path borrows from the m_pBaseURI member. 
+		std::string		m_path;							//!< The path (e.g. foo, /foo, ../bar, foo/bar, etc). If the leading slash is omitted, this is a relative path and the full path borrows from the m_pBaseURI member.
 		std::string		m_query;						//!< The query componet (e.g. ?id=1234&page=5&rowspage=28)
 		std::string		m_jsonPointer;			//!< The fragment which is expected to hold a json  pointer (e.g. #, #/foo, #/foo/bar, etc.)
 		StringVect		m_vectPath;					//!< The path segments in order
-		StringVect		m_vectJsonPointer;	//!< The json pointer segments in order  
+		StringVect		m_vectJsonPointer;	//!< The json pointer segments in order
 
 		//! The json pointer decoder (see http://tools.ietf.org/search/rfc6901)
 		static std::string	decodeJsonPointer(const std::string& strPtr);
@@ -154,7 +173,7 @@ namespace WJPP
 		std::string&			getMode();
 		//! Get the host (aka "authority") details (e.g. mysite.com, mysite.com:8080, user:pwd@mysite.com:8080, etc.)
 		std::string&			getHost();
-		//! Get the path (e.g. foo, /foo, ../bar, foo/bar, etc). If the leading slash is omitted, this is a relative path and the full path borrows from the m_pBaseURI member. 
+		//! Get the path (e.g. foo, /foo, ../bar, foo/bar, etc). If the leading slash is omitted, this is a relative path and the full path borrows from the m_pBaseURI member.
 		std::string				getPath();
 		//! Get the query componet (e.g. ?id=1234&page=5&rowspage=28)
 		std::string&			getQuery();
@@ -236,9 +255,9 @@ namespace WJPP
 				//! List of validators that apply to the WJElement
 				WJEList*								_v;
 
-				//! Default ctor 
+				//! Default ctor
 				Info() : _s(NULL), _v(NULL) {}
-				//! dtor deletes members 
+				//! dtor deletes members
 				~Info()
 				{
 					delete _s;
@@ -260,7 +279,7 @@ namespace WJPP
 			Schema*									_schema()											{ Info* i = _info(); return i ? i->_s : NULL; }
 
 		public:
-			//! Creates a SchemaInfo object and attaches it to the WJElement passed in 
+			//! Creates a SchemaInfo object and attaches it to the WJElement passed in
 			SchemaInfo(WJElement	wje = NULL) : _e(wje) {}
 
 			//! Returns a pointer to a list of validators which apply to the WJElement (or NULL if this has none)
@@ -340,7 +359,7 @@ namespace WJPP
 		//! Adds an error object to the errors array
 		void										_validationError(Node& schema, Node& node, const std::string& strMessage);
 
-		//! Validation helper that assumes this is a schema and checks if node is of the appropriate data type 
+		//! Validation helper that assumes this is a schema and checks if node is of the appropriate data type
 		bool										_validateType(Node& node, Node& errors, bool log = true);
 		//! _validateType helper
 		bool										_validateSingleType(Node& node, const std::string& type);
@@ -431,14 +450,14 @@ namespace WJPP
 		//! returns an iterator that points passed the last element
 		iterator								end()													{ return iterator(); }
 
-		//! Access a child (if isContainer() == false or the element can't be found, the returned elements operator!() will return true) 
+		//! Access a child (if isContainer() == false or the element can't be found, the returned elements operator!() will return true)
 		/*! Please beware that this methond will not work like WJElements selectors. Instead, it will only go one level deep at the time.
 
-				So while in WJElement you might do: 
+				So while in WJElement you might do:
 					WJElement three = WJGet(current, "one.two.three", last);
 
 				With nodes you'd do:
-					Node three = current["one"]["two"]["three"]; 
+					Node three = current["one"]["two"]["three"];
 					if (three)
 					{
 						// work with three
@@ -450,15 +469,15 @@ namespace WJPP
 				This makes it easy to navigate the JSON structure using JSON pointers.
 		*/
 		Node										operator[](const char* name);
-		//! Access a child of an array (if isContainer() == false or the element can't be found, the returned elements operator!() will return true) 
-		Node										operator[](const std::string& name) { return operator[](name.c_str()); } 
+		//! Access a child of an array (if isContainer() == false or the element can't be found, the returned elements operator!() will return true)
+		Node										operator[](const std::string& name) { return operator[](name.c_str()); }
 
-		//! Access a child by index (preconditions for success: isContainer()==true && i < size()) 
-		/*! \note this works for both arrays and objects, but is not particularly meaningful for objects as it simply gives you the i'th property 
+		//! Access a child by index (preconditions for success: isContainer()==true && i < size())
+		/*! \note this works for both arrays and objects, but is not particularly meaningful for objects as it simply gives you the i'th property
 		    \note it is recommended you use the iterator for iterating over childern instead of this method
 		*/
 		Node										operator[](unsigned int i);
-		//! Access a child by index (preconditions for success: isContainer()==true && i < size()) 
+		//! Access a child by index (preconditions for success: isContainer()==true && i < size())
 		Node										operator[](int i)							{ return operator[]((unsigned int) i); }
 		//@}
 
@@ -529,29 +548,45 @@ namespace WJPP
 		//! returns a JSON pointer to this (if zeroIndex is true, every index will be expressed as * rather than the true index)
 		std::string							asJsonPointer(bool zeroIndex = false)		{ std::string str; return _asJsonPointer(str, zeroIndex); }
 
-		//! compare if two json nodes are identical (this also works for containers)
-		bool										operator==(Node& rhs);
-		//! compare if two json nodes are different (this also works for containers)
-		bool										operator!=(Node& rhs)					{ return !operator==(rhs); } 
+		//! Compares this with rhs (throws runtime_error)
+		/*!
+				returns -1 if this is smaller than rhs, 0 if this and rhs are equal and 1 if this is less than rhs.
+
+				A node without WJElement is less than a node with a WJElement.
+
+				If the nodes are of different type, the method throws a runtime_error.
+		*/
+		int											compare(Node& rhs);
+
+		/** @name Comparison operators
+		*/
+		//@{
+		bool										operator==(Node& rhs)		{ return compare(rhs) == 0; }
+		bool										operator!=(Node& rhs)		{ return compare(rhs) != 0; }
+		bool										operator> (Node& rhs)		{ return compare(rhs) == 1; }
+		bool										operator< (Node& rhs)		{ return compare(rhs) == -1; }
+		bool										operator>=(Node& rhs)		{ return compare(rhs) != -1; }
+		bool										operator<=(Node& rhs)		{ return compare(rhs) != 1; }
+		//@}
+
 		//! If this operator returns true, you're dealing with a NULL node
-		/*! This operator is extremely useful to check success of other methods:
+		/*! This operator is extremely useful to check success of method which return a node but could fail:
 
-				Node node = Node::parseJson("[0,1,2,3]");
+				Node node = Node::parseJson("[fail,1,2,3]");
 
-				// you can do this...
 				if (!node)
-					return;
+				{
+					// parsing failed
+				}
 
-				// or that...
 				if (node)
 				{
-					// work with node
+					// parsing succeeded
 				}
 		*/
 		bool										operator!()										{ return _e == NULL; }
 		//! Allow a Node obejct to be used wherever a WJElement is expected
 		WJElement								operator*() const							{ return _e; }
-
 		//! Allow a Node obejct to be used wherever a WJElement is expected
 														operator WJElement()					{ return _e; }
 /*
@@ -575,7 +610,7 @@ namespace WJPP
 		/*! @param os The output stream where this should be written to
 
 				\note This method writes just values, no labels or JSON punctuation.
-				If this is an array or an object, it will write [array] or [object]. 
+				If this is an array or an object, it will write [array] or [object].
 		*/
 		std::ostream &					to_stream(std::ostream & os);
 
@@ -641,6 +676,7 @@ namespace WJPP
 				\endcode
 		*/
 		std::string							getString();
+		char *									getChar();
 		bool										getBool();
 		int											getInt()																				{ return (int) getInt32(); }
 		int32										getInt32();
@@ -651,7 +687,7 @@ namespace WJPP
 		//@}
 
 		//@{ set this' value
-		/*! 
+		/*!
 				You can use these methods to change the type of a node. Lets assume node.isString() returns true:
 
 				\code
@@ -702,7 +738,7 @@ namespace WJPP
 
 	protected:
 		//! This sigleton class is used to generate unique schema id's when they are missing
-		/*! 
+		/*!
 				This class basically builds ID's like 'http://localhost/schema/xyz'
 
 				where xyz is an ever increasing identifier going from starting from aaaa to zzzz.
@@ -738,14 +774,14 @@ namespace WJPP
 	public:
 
 		//! Singleton accessor
-		/*! @param fnLoader This optional parameter, if provided, must be a pointer to a function that 
+		/*! @param fnLoader This optional parameter, if provided, must be a pointer to a function that
 		                    takes a string representing a URI as the only parameter, loads the referenced
 												resource and returns a string that contains the data from that resource.
 
 				\note It is HIGHLY recommended that the first time you call this method you provide a fnLoader.
 				If you call loadSchema(strURI) and the schema doesn't exist, the Cache will delegate the loading
 				of the resource to fnLoader. If no loader is specified, only schemas already cached can be
-				accessed. 
+				accessed.
 				Beware that fnLoader values provided in subsequent calls to GetCache are ignored.
 		*/
 		static Cache&			GetCache(SchemaLoaderFunc fnLoader = NULL);
