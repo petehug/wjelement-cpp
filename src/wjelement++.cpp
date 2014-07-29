@@ -1047,21 +1047,13 @@ namespace WJPP
 
 	int Node::compare(Node& rhs)
 	{
-		int	iCmp;
+		int			iCmp;
+		WJRType type = getType();
 
-		if (!_e && !rhs._e)
-			return 0;
-
-		if (!_e && rhs._e)
+		if (type != rhs.getType())
 			return -1;
 
-		if (_e && !rhs._e)
-			return 1;
-
-		if (_e->type != rhs._e->type)
-			throw std::runtime_error("Node::compare: nodes to compare must have the same type");
-
-		switch(_e->type)
+		switch(type)
 		{
 			case WJR_TYPE_OBJECT:
 			case WJR_TYPE_ARRAY:
@@ -1081,7 +1073,7 @@ namespace WJPP
 				if (ir != rhs.end())
 					return 1;
 
-				return true;
+				return 0;
 			}
 
 			case WJR_TYPE_STRING:

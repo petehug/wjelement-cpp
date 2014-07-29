@@ -548,13 +548,13 @@ namespace WJPP
 		//! returns a JSON pointer to this (if zeroIndex is true, every index will be expressed as * rather than the true index)
 		std::string							asJsonPointer(bool zeroIndex = false)		{ std::string str; return _asJsonPointer(str, zeroIndex); }
 
-		//! Compares this with rhs (throws runtime_error)
+		//! Compares this with rhs
 		/*!
 				returns -1 if this is smaller than rhs, 0 if this and rhs are equal and 1 if this is less than rhs.
 
 				A node without WJElement is less than a node with a WJElement.
 
-				If the nodes are of different type, the method throws a runtime_error.
+				If the nodes are of different type, the method always returns -1.
 		*/
 		int											compare(Node& rhs);
 
