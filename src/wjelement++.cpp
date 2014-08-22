@@ -597,7 +597,7 @@ namespace WJPP
 		ostrm << getBaseURI();
 
 		if (!jsonPointer.empty())	
-			ostrm << "#/" << jsonPointer;
+			ostrm << "#" << jsonPointer;
 		else
 			ostrm << '#';
 
@@ -1562,16 +1562,11 @@ namespace WJPP
 
 		try
 		{
-		 ref = _resolveRef(refs, errors);
+			ref = _resolveRef(refs, errors);
 		}
 		catch (std::runtime_error & e)
 		{
-			if (!errors)
-				throw;
-
 			errors._validationError(*this, ref, string("failed to resolve $ref, ") + e.what());
-
-			return *this;
 		}
 
 		return ref;
@@ -1616,7 +1611,12 @@ namespace WJPP
 					throw runtime_error(string("Failed to resolve \"$ref\":\"") + refURI.getFullURI() + "\"");
 
 				if (refURI.hasJsonPointer())
+				{
 					refSchema = refSchema._getInlinedSchema(refURI);
+
+					if (!refSchema)
+						throw std::runtime_error(ref.getString());
+				}
 
 				SchemaInfo	si_ref(refSchema);
 
@@ -1732,7 +1732,7 @@ namespace WJPP
 		Node				validator;
 
 		// if this' type is worng lets forget about it
-		if (!ref._validateType(node, errors, log))
+		if (!ref || !ref._validateType(node, errors, log))
 			return false;
 
 		switch (node.getType())
