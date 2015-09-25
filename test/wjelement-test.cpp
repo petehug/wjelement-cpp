@@ -2,9 +2,9 @@
 //
 
 #ifdef _WIN32
-#include "HeapChecker.h"
-// HeapChecker	HeapChecker::M_HeapChecker(1617L);
-HeapChecker	HeapChecker::M_HeapChecker;
+	// uncomment this line and set the appropriate allocation number to break on allocation (only works in _DEBUG)
+	// #define HEAPCHECKER_BREAK_ON 4595
+	#include "HeapChecker.h"
 #endif
 
 #include <wjelement++.h>
@@ -59,7 +59,11 @@ int main(int argc, char **argv)
 	};
 
 	Cache&										cache = WJPP::Cache::GetCache();
+#ifdef _WIN32
+	string										fileName, testPath = string(".." FILE_PATH_SEPARATOR ".." FILE_PATH_SEPARATOR ".." FILE_PATH_SEPARATOR ".." FILE_PATH_SEPARATOR "draft4-tests" FILE_PATH_SEPARATOR);
+#else
 	string										fileName, testPath = string(".." FILE_PATH_SEPARATOR ".." FILE_PATH_SEPARATOR "draft4-tests" FILE_PATH_SEPARATOR);
+#endif
 	ostringstream							ostrm;
 	NodeVect									vectTests;
 	bool											fail = false;

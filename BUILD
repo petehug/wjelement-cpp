@@ -1,10 +1,5 @@
-Windows:
-========
-Please use the VC 9.0 vcproj files in .\windows and .\test\windows.
-
-
-Unix:
-========
+General
+=======
 This library is built on top of the C library WJElement. At the time of this writing, wjelement did not distinguish 
 between number and integer JSON types. For this reason I created the new WJElement branch wjelement++ and added support 
 for integer JSON types. WJElement-cpp requires that you build and link with this branch of WJElement and that when 
@@ -12,6 +7,23 @@ building WJElement the precompiler directive WJE_DISTINGUISH_INTEGER_TYPE is def
 
 WJElement (wjelement++ branch is available from here: https://github.com/petehug/wjelement/tree/wjelement++)
 
+NOTE: The wjelement build settings refer to WJElement via relative paths so please make sure wjelement-cpp
+and WJElement (wjelement++ branch) share the same parent folder.
+
+You will also need boost (wjelement uses boost::regecx). You can get the library from http://boost.org. I have built
+wjelement-cpp with versions 1.42 as well as 1.57 with no problems.
+
+
+Windows:
+========
+Please use the VC 9.0 or VC 10.0 solution files you find in WJElement\windows and wjelement-cpp\windows.
+Build WJElement before building wjelement-cpp.
+
+All going well you should be able to run wjelement-test which runs all the JSON Schema 04 test cases.
+
+
+Unix:
+========
 Building WJElement-cpp requires c-make. On the command prompt, provide the following command from the root directory 
 of wjelement-cpp and replace the "..." with the appropriate path:
 
@@ -99,3 +111,11 @@ whether he/she want to use default cache value for respective cache variable or 
 by providing new cache value for respective cache variable. This will happen for each cache variable. One of the 
 cache variable CMAKE_INSTALL_PREFIX will point to default cache value /usr/local.User will be prompted to use this
 default value or provide a new cache value.
+
+All going well you should be able to run wjelement-test which runs all the JSON Schema 04 test cases.
+*
+
+Errata
+======
+It has been brought to my attention that - on some Unix systems - weired compiler issues appear caused by min/max
+definitions in WJElements xpl.h file. To avoid this, include <algorithm> before you include <wjelement++.h>

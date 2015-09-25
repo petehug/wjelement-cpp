@@ -1,14 +1,19 @@
 #ifndef _HeapChecker_h_
 #define _HeapChecker_h_
 
+// In your code, wrap any HeapChecker code like this:
+// #ifdef _HAS_HEAP_CHECKER
+//   ...heapchecker code here
+// #endif 
+
+// Comment this line out if you don't want heap checking enabled 
 #ifdef _DEBUG
+#define _HAS_HEAP_CHECKER
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
 #include <crtdbg.h>
 #include <string.h>
 
-// #define new DEBUG_NEW
-// #define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
 #endif
 
 
@@ -22,15 +27,6 @@ class HeapChecker
 
 	public:
 		static HeapChecker		M_HeapChecker;
-
-		HeapChecker(long lAllocNum)
-		{
-			_CrtSetDbgFlag( _CRTDBG_LEAK_CHECK_DF | _CrtSetDbgFlag(0));
-			_CrtMemCheckpoint( &cdbgMS1 );
-			_CrtSetBreakAlloc(lAllocNum);
-
-			DebugCheckpoint("At program start");
-		}
 
 		HeapChecker(bool bCreateIntentionalLeak = false)
 		{
@@ -91,4 +87,12 @@ class HeapChecker
 #endif
 };
 
+#ifdef _DEBUG
+	HeapChecker	HeapChecker::M_HeapChecker;
+	
+	#ifdef HEAPCHECKER_BREAK_ON
+		long G_l = HeapChecker::M_HeapChecker.BreakOnAllocation(HEAPCHECKER_BREAK_ON);
+	#endif
 #endif
+
+#endif /* _HeapChecker_h_ */

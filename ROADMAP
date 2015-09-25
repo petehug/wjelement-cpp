@@ -5,4 +5,5 @@ Wjelement-cpp Roadmap
   to store schemas and client caches to store json documents
 * The Cache will require mutex protection when manipulating the schema cache
 * Support for JSON hyper schema
-* Encapsulate JSON schema version specific code so the library can support multiple versions concurrently coexist
+* Encapsulate JSON schema version specific code so the library can support multiple JSON
+  Schema versions (currently only supports 04)
