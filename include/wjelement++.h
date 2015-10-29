@@ -40,6 +40,10 @@ Special thanks goes to Micah N Gorrell for his excellent wjelement library!
 	The included makfiles ensure the library is built correctly for use with wjelement++.
 */
 #define WJE_DISTINGUISH_INTEGER_TYPE
+
+/* Link statically with WJElement */
+#define COMPILE_AS_STATIC
+
 //=======================================================================================
 
 #include <wjelement.h>
@@ -52,7 +56,7 @@ Special thanks goes to Micah N Gorrell for his excellent wjelement library!
 #include <set>
 #include <list>
 #include <boost/regex.hpp>
-
+#include <boost/thread/recursive_mutex.hpp>
 
 namespace WJPP
 {
@@ -734,8 +738,6 @@ namespace WJPP
 	//! The schema cache singleton class stores schema info globally
 	class Cache
 	{
-		friend class Node;
-
 	protected:
 		//! This sigleton class is used to generate unique schema id's when they are missing
 		/*!
@@ -754,11 +756,15 @@ namespace WJPP
 
 		};
 
-		NodeMap						m_mapSchema;
-		Node							m_metaSchema;
-		Node							m_emptySchema;
-		NodeSet						m_set;
-		SchemaLoaderFunc	m_fnLoader;
+		friend class Node;
+		friend class Cache::IDGenerator;
+
+		static boost::recursive_mutex	M_mtx;
+
+		NodeMap									m_mapSchema;
+		Node										m_metaSchema;
+		Node										m_emptySchema;
+		NodeSet									m_set;
 
 		void							_onNodeCreated(Node& schema)		{ m_set.insert(schema); }
 		void							_onNodeDeleted(Node& schema)		{ m_set.erase(m_set.find(schema)); }
@@ -766,7 +772,7 @@ namespace WJPP
 		void							_onSchemaCreated(Node& schema, URIPtr pURI);
 		void							_onSchemaDeleted(Node& schema, URIPtr pURI);
 
-		Cache(SchemaLoaderFunc fnLoader = NULL) : m_fnLoader(fnLoader) { _initialize(); }
+		Cache()																						{ _initialize(); }
 		~Cache();
 
 		void							_initialize();
@@ -774,26 +780,44 @@ namespace WJPP
 	public:
 
 		//! Singleton accessor
-		/*! @param fnLoader This optional parameter, if provided, must be a pointer to a function that
-		                    takes a string representing a URI as the only parameter, loads the referenced
-												resource and returns a string that contains the data from that resource.
-
+		/*! 
 				\note It is HIGHLY recommended that the first time you call this method you provide a fnLoader.
 				If you call loadSchema(strURI) and the schema doesn't exist, the Cache will delegate the loading
 				of the resource to fnLoader. If no loader is specified, only schemas already cached can be
 				accessed.
 				Beware that fnLoader values provided in subsequent calls to GetCache are ignored.
 		*/
-		static Cache&			GetCache(SchemaLoaderFunc fnLoader = NULL);
+		static Cache&			GetCache();
 
 		//! Returns the Node that specifies the schema requested in the URI
-		/*! The method first looks in its own cache and returns what the schema when it finds it
+		/*! @param strURI		The URI to the schema resource.
 
-				If the schema is not found, the mothod calls m_fnLoader if it is defined. The method
-				is expected to retrieve the resource at the URI specified and return its raw form to this.
-				Return an empty std::string to indicate the resource can't be found.
+				@param errors		The node that, if errors are encountered during parsing of the schema, 
+												will be populated with errors.
+
+				@param fnLoader A function that resolves the URI. It simply takes a string as input
+												parameter and returns an std::string that contains the body of the 
+												resource. The method can either throw an std::runtime_error exception
+												with details of an error or an empty string (which will be treated as
+												"resource not found" error). If no loader function is supplied and
+												the resource is not already in the cache, the method call will result
+												in a "resource not found" error.
+
+				The method first looks in its own cache and returns the schema if it already exists. If
+				the schema is not found, the method calls fnLoader (if provided).
 		*/
-		Node							loadSchema(const std::string& strURI, Node& errors);
+		Node							loadSchema(const std::string& strURI, Node& errors, SchemaLoaderFunc fnLoader = NULL);
+
+		//! Validate a Draft-04 JSON schema and binds its nodes to the Draft-04 meta schema definition
+		/*!	The method returns true if the schema validates successfully. If it returns false, the errors
+				parameter contains the details of the errors.
+
+				Please note that since there is no URI, a temporary URI is generated so that the schema
+				can be stored in the cache. You can access the URI if the call is successfull via 
+				/code
+					SchemaInfo(schema).uri();
+				/endcode
+		*/
 		bool							loadSchema(Node& schema, Node& errors);
 
 		Node							getMetaSchema()							{ return m_metaSchema; }
@@ -811,6 +835,34 @@ namespace WJPP
 
 
 	//! Managed nodes are discarded when the object is distroyed
+	/*! This class behaves just like a Node. The only difference is that when the object is deleted,
+			the underlying element is also deleted.
+
+			Consider this code:
+
+			\code
+			Node myNode;
+			{
+				Node node = Node::parseJson("{\"value\":1}");
+				myNode = node;
+			}
+			myNode.dump(cout); // no problem
+			\endcode
+			The above code works fine because when node gets destroyed on block exit, the WJElement attached
+			to it is not discarded. To discard it you'd have to call discard() explicitly.
+
+			\code
+			Node myNode;
+			{
+				ManagedNode node = Node::parseJson("{\"value\":1}");
+				myNode = node;
+			}
+			myNode.dump(cout); // Undefined behaviour
+			\endcode
+			The above codes behaviour is undefined because when node gets destroyed on block exit it deletes
+			the attached WJElement.
+
+		*/
 	class ManagedNode : public Node
 	{
 	public:
@@ -824,10 +876,37 @@ namespace WJPP
 		//! dtor
 		~ManagedNode() { discard(); }
 
-		// assignemnt
-		ManagedNode&	operator=(Node& n)				{ _e = n._e; return *this; }
-		ManagedNode&	operator=(ManagedNode& n) { _e = n._e; return *this; }
-		ManagedNode&	operator=(WJElement e)		{ _e = e; return *this; }
+		//@{ valid assignemnts
+		ManagedNode&	operator=(Node& n)				{ if (_e) discard(); _e = n._e; return *this; }
+		ManagedNode&	operator=(WJElement e)		{ if (_e) discard(); _e = e; return *this; }
+		//@} assignemnt
+
+		//! Illegal assignment - will throw runtime_error if used
+		/*!
+				If you need to assign a managedNode to another, you can use this technique:
+
+				/code
+				{
+					ManagedNode a, b;
+
+					a = Node::parseJson("{\"value\":1}");
+					b = a.releaseNode();
+
+					cout << (a ? "a is valid" : "a is a NULL node") << endl;		// prints "a is a NULL node"
+					cout << (b ? "b is valid" : "b is a NULL node") << endl;		// prints "b is valid"
+				}
+				/endcode
+		*/
+		ManagedNode&	operator=(ManagedNode& n) { throw std::runtime_error("assignement of one ManagedNode to another is illegal"); }
+
+		//! Releases the Node
+		/*!
+			If you decide you need to keep the underlying Node past the life cycle of the ManagedNode,
+			send the releaseNode message and discard() the returned node manually.
+
+			This ManagedNode will be a NULL node on return.
+		*/
+		Node					releaseNode()							{ Node node(_e); _e = NULL; return node; }
 	};
 
 } /* namespace WJPP */

@@ -2909,10 +2909,12 @@ namespace WJPP
 					Cache Implementation
 	*******************************************************************/
 		
+	boost::recursive_mutex	Cache::M_mtx;
+
 	/* static */
-	Cache& Cache::GetCache(SchemaLoaderFunc fnLoader)
+	Cache& Cache::GetCache()
 	{
-		static Cache	g_Cache(fnLoader);
+		static Cache	g_Cache;
 		return g_Cache;
 	}
 
@@ -2988,20 +2990,21 @@ namespace WJPP
 
 
 
-	Node Cache::loadSchema(const string& strURI, Node& errors)
+	Node Cache::loadSchema(const string& strURI, Node& errors, SchemaLoaderFunc fnLoader)
 	{
-		NodeMapItr		itr = m_mapSchema.find(URI(strURI).getBaseURI());
+		boost::recursive_mutex::scoped_lock		lck(M_mtx);
+		NodeMapItr														itr = m_mapSchema.find(URI(strURI).getBaseURI());
 
 		if (itr != m_mapSchema.end())
 			return itr->second;
 
-		if (m_metaSchema && m_fnLoader)
+		if (m_metaSchema && fnLoader)
 		{
 			Node				schema;
 
 			try
 			{
-				string			rsrce = m_fnLoader(strURI);
+				string			rsrce = fnLoader(strURI);
 
 				if (rsrce.empty())
 					throw runtime_error(string("failed to load URI ") + strURI);
@@ -3030,6 +3033,8 @@ namespace WJPP
 
 	bool	Cache::loadSchema(Node& schema, Node& errors)
 	{
+		boost::recursive_mutex::scoped_lock		lck(M_mtx);
+
 		if (m_metaSchema && schema)
 			return m_metaSchema.validateInstance(schema, errors);
 
@@ -3048,8 +3053,9 @@ namespace WJPP
 	{
 		static Cache::IDGenerator	S_idGenerator;
 
-		string			strID = S_idGenerator.m_strID;
-		string&			currID = S_idGenerator.m_strID;
+		boost::recursive_mutex::scoped_lock		lck(Cache::M_mtx);
+		string																strID = S_idGenerator.m_strID;
+		string&																currID = S_idGenerator.m_strID;
 
 		// Generate the next id
 		string::size_type		pos = currID.length() - 1;

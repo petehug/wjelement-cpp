@@ -15,11 +15,12 @@ Further reading:
 
 Dependencies: 
 - WJElement (wjelement++ branch). This library requires that you use the wjelement++ branch of WJElement. You can get it from here: https://github.com/petehug/wjelement/tree/wjelement++. The library must be built by specifying the WJE_DISTINGUISH_INTEGER_TYPE compiler directive.
-- Boost.Regex (I've been using 1.42.0). You can get the library from here: http://www.boost.org.
+- boost.regex and boost.thread (I've been using 1.42.0). You can get the library from here: http://www.boost.org.
 
 Notes:
-- In my view a major issue is that the current WJElement version does no strict JSON parsing. Instead of rejecting JSON that isn't valid, it simply omits incorrect "portions". However, I am aware that efforts are underway to add a strict reader to the library that reports errors and stops parsing.
-- The library is not thread-safe but this item is high on the road-map
+- The original WJElement library does no strict JSON parsing. Instead of rejecting JSON that isn't valid, it simply omits incorrect "portions". 
+  I changed this to simply return and NULL node but no message as to where the problem is :(. Hoping the WJElement group will fix this.
+- The schema cache is now thread safe but other parts are not
 - JSON Schema issues: 
 -- I feel there are major issues in JSON Schema draft-04 spec WRT the schema's "id" propperty. It is likely that you face some issues with this library if you rely on "id".
 -- The library does not honor "format", but this item is on the road-map

@@ -16,7 +16,7 @@ wjelement-cpp with versions 1.42 as well as 1.57 with no problems.
 
 Windows:
 ========
-Please use the VC 9.0 or VC 10.0 solution files you find in WJElement\windows and wjelement-cpp\windows.
+Please use the VC 9.0, VC 10.0 or VC 12.0 solution files you find in WJElement\windows and wjelement-cpp\windows.
 Build WJElement before building wjelement-cpp.
 
 All going well you should be able to run wjelement-test which runs all the JSON Schema 04 test cases.
