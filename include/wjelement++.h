@@ -211,6 +211,7 @@ namespace WJPP
 		friend class	Cache;
 		friend class	ManagedNode;
 		friend struct Node_cmp;
+		friend std::ostream & operator<<(std::ostream & strmOut, Node & node);
 
 	protected:
 		//! The ONLY data member is a WJElement (which is a pointer)
@@ -349,8 +350,8 @@ namespace WJPP
 		//! Deletes the list of validators this may hold, but does not delete tha validators themselves
 		void										_discardValidators();
 
-		//! Helper for dump()
-		std::ostream &					_dump(std::ostream & os, int indent);
+		//! Helper for dump() (if indent is negative, no indentation
+		std::ostream &					_dump(std::ostream & os, int indent = 1);
 
 		//! Loads the meta schema (the meta schema draft04 is currently embedded in the code)
 		static Node							_loadMetaSchema(CachePtr pCache);
@@ -679,6 +680,7 @@ namespace WJPP
 					node.getString();
 				\endcode
 		*/
+		std::string							getJSONEncodedString();
 		std::string							getString();
 		char *									getChar();
 		bool										getBool();
@@ -723,6 +725,13 @@ namespace WJPP
 		//@}
 
 	};
+
+
+	//! Stream a Node to an std::ostream
+	inline std::ostream & operator<<(std::ostream & strmOut, Node & node)
+	{
+		return node._dump(strmOut, -1);
+	}
 
 
 
@@ -828,6 +837,7 @@ namespace WJPP
 	};
 
 
+	//! compare one node with another
 	inline bool Node_cmp::operator()(const Node& lhs, const Node& rhs) const
 	{
 		return *lhs < *rhs;
@@ -865,6 +875,8 @@ namespace WJPP
 		*/
 	class ManagedNode : public Node
 	{
+		friend std::ostream & operator<<(std::ostream & strmOut, ManagedNode & node);
+
 	public:
     //! Create a node from a WJElement
     ManagedNode() {}
@@ -909,14 +921,15 @@ namespace WJPP
 		Node					releaseNode()							{ Node node(_e); _e = NULL; return node; }
 	};
 
+
+	//! Stream a Node to an std::ostream
+	inline std::ostream & operator<<(std::ostream & strmOut, WJPP::ManagedNode & node)
+	{
+		return node._dump(strmOut, -1);
+	}
+
 } /* namespace WJPP */
 
-
-//! Stream a Node to an std::ostream
-inline std::ostream & operator << (std::ostream & strmOut, WJPP::Node aNode)
-{
-	return aNode.to_stream(strmOut);
-}
 
 
 #endif /* _wjelementcpp_h_ */
