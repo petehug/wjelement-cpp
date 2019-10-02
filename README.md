@@ -26,6 +26,4 @@ Notes:
 -- The library does not honor "format", but this item is on the road-map
 -- The library does not implement JSON Hyper-Schema
 
-Peter Hug
-
 Special thanks goes to Micah N Gorrell for his excellent wjelement library!
