@@ -182,7 +182,26 @@ namespace WJPP
 				default:
 					l = wjWUTF8CharSize(e, length - (e - value));
 					
-					if (l > 1 || (l == 1 && *e >= '\x20'))
+					if (l == size_t(-1))
+					{
+						/*
+							*e is not valid UTF8 data, and must be escaped before
+							being sent. But JSON-standard does not give us a mechanism
+							so we chose "\xhh" format because of its almost universal comprehension.
+						*/
+						char	nonUnicodeHex[sizeof("\\x00")];
+
+						next = v;
+						while (next < e)
+							str += *next++;
+
+						sprintf(nonUnicodeHex, "\\x%02x", (unsigned char)*e);
+
+						str += nonUnicodeHex;
+
+						v = e + 1;
+					}
+					else if (l > 1 || (l == 1 && *e >= '\x20'))
 					{
 						/*
 							*e is the primary octect of a multi-octet UTF8
@@ -206,25 +225,6 @@ namespace WJPP
 						sprintf(unicodeHex, "\\u00%02x", (unsigned char) *e);
 						
 						str += unicodeHex;
-
-						v = e + 1;
-					}
-					else if (l < 0)
-					{
-						/*
-							*e is not valid UTF8 data, and must be escaped before
-							being sent. But JSON-standard does not give us a mechanism
-							so we chose "\xhh" format because of its almost universal comprehension.
-						*/
-						char	nonUnicodeHex[sizeof("\\x00")];
-
-						next = v;
-						while(next < e)
-							str += *next++;
-
-						sprintf(nonUnicodeHex, "\\x%02x", (unsigned char) *e);
-						
-						str += nonUnicodeHex;
 
 						v = e + 1;
 					}
